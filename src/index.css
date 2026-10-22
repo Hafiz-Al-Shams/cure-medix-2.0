@@ -1,0 +1,20 @@
+/* Mockup uses a clean geometric sans, so Lato is swapped for Plus Jakarta Sans */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.primary-btn {
+  background-color: #004734e0;
+  color: white;
+}
+
+.emerald-loader {
+  border-top-color: #059669 !important;
+  border-bottom-color: #059669 !important;
+}
