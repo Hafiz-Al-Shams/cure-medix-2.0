@@ -61,12 +61,8 @@ const NavBar = () => {
             <li><NavLink to="/shop" className={linkClass}><RiShoppingBag2Line className="text-lg" /> Shop</NavLink></li>
             {/* NEW in mockup: change these two routes to your real pages when you have them */}
             <li><Link to="/shop" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-base-content/70 hover:text-emerald-600"><FiTag /> Deals</Link></li>
-            {/* Online Doctor is always highlighted, as in the mockup */}
-            <li>
-                <NavLink to="/online-doctor" className={({ isActive }) => `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold border border-emerald-500/40 text-emerald-700 ${isActive ? "bg-emerald-100" : "bg-emerald-50"} dark:bg-emerald-900/30 dark:text-emerald-300`}>
-                    <FaStethoscope /> Online Doctor
-                </NavLink>
-            </li>
+            {/* Online Doctor now uses the same linkClass as the others, so it is highlighted ONLY on its own page */}
+            <li><NavLink to="/online-doctor" className={linkClass}><FaStethoscope /> Online Doctor</NavLink></li>
             <li><Link to="/" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-base-content/70 hover:text-emerald-600"><FiFileText /> Articles</Link></li>
         </>
     );
@@ -115,7 +111,7 @@ const NavBar = () => {
                             <div className="leading-tight">
                                 {/* Same two-tone text as the footer: "Cure" + emerald "Medix" (Cure uses theme text color so it stays visible on the white navbar) */}
                                 <h4 className="text-xl font-bold text-base-content">Cure<span className="text-emerald-400">Medix</span></h4>
-                                <p className="hidden md:block text-[9px] tracking-widest text-base-content/90">HEALTHCARE PLATFORM</p>
+                                <p className="hidden md:block text-[9px] tracking-widest text-base-content/50">HEALTHCARE PLATFORM</p>
                             </div>
                         </Link>
                     </div>
