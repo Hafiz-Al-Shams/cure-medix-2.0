@@ -22,7 +22,7 @@ const Discount = () => {
             const swiper = swiperRef.current;
             setTimeout(() => {
                 swiper.update();
-                swiper.autoplay.start();
+                swiper.autoplay?.start();
             }, 100);
         }
     }, [medicines]);
