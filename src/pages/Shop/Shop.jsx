@@ -84,15 +84,26 @@ const Shop = () => {
                 });
         } else {
             setSelected(null);
+
             Swal.fire({
                 title: "You are not Logged In",
                 text: "Please login to add to the cart?",
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonText: "Yes, login!",
+                buttonsStyling: false, // turns off Swal's default blue/grey buttons
+                reverseButtons: true, // Cancel on the left, main action on the right
+                customClass: {
+                    popup: "rounded-2xl",
+                    title: "text-xl font-bold",
+                    actions: "gap-3",
+                    confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold transition-colors",
+                    cancelButton: "px-5 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors",
+                },
             }).then((result) => {
                 if (result.isConfirmed) navigate("/signIn", { state: { from: location } });
             });
+
         }
     };
 

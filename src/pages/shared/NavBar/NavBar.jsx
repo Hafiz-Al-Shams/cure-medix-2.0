@@ -15,8 +15,7 @@ import useAuth from "../../../hooks/useAuth";
 
 // Pill style for nav links: active = soft emerald, inactive = plain text
 const linkClass = ({ isActive }) =>
-    `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-        isActive ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30" : "text-base-content/70 hover:text-emerald-600"
+    `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${isActive ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30" : "text-base-content/70 hover:text-emerald-600"
     }`;
 
 const NavBar = () => {
@@ -111,7 +110,7 @@ const NavBar = () => {
                             <div className="leading-tight">
                                 {/* Same two-tone text as the footer: "Cure" + emerald "Medix" (Cure uses theme text color so it stays visible on the white navbar) */}
                                 <h4 className="text-xl font-bold text-base-content">Cure<span className="text-emerald-400">Medix</span></h4>
-                                <p className="hidden md:block text-[9px] tracking-widest text-base-content/50">HEALTHCARE PLATFORM</p>
+                                <p className="hidden md:block text-[9px] tracking-widest text-base-content">HEALTHCARE PLATFORM</p>
                             </div>
                         </Link>
                     </div>
