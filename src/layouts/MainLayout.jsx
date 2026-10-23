@@ -1,3 +1,4 @@
+// 📁 PATH: src/layouts/MainLayout.jsx  (MODIFIED existing file – replace the whole file)
 import { Outlet, useLocation } from "react-router-dom";
 import NavBar from "../pages/shared/NavBar/NavBar";
 import Footer from "../pages/shared/Footer/Footer";
@@ -11,6 +12,7 @@ const MainLayout = () => {
 
     const noFooter1 = location.pathname.includes('/signIn')
     const noFooter2 = location.pathname.includes('/signUp')
+    const noFooter3 = location.pathname.includes('/forgot-password') // NEW: no footer on the forgot password page
 
 
     return (
@@ -21,7 +23,7 @@ const MainLayout = () => {
             <div className="min-h-screen bg-base-100">
                 <Outlet></Outlet>
             </div>
-            {noFooter1 || noFooter2 ? null : <Footer></Footer>}
+            {noFooter1 || noFooter2 || noFooter3 ? null : <Footer></Footer>}
         </>
     );
 };

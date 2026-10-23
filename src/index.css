@@ -1,3 +1,5 @@
+/* 📁 PATH: src/index.css  (MODIFIED existing file – replace the whole file) */
+
 /* Mockup uses a clean geometric sans, so Lato is swapped for Plus Jakarta Sans */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
@@ -17,4 +19,50 @@ body {
 .emerald-loader {
   border-top-color: #059669 !important;
   border-bottom-color: #059669 !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   NEW: dark-mode styling for ALL SweetAlert2 popups site-wide
+   (login/sign-up alerts, shop "not logged in", logout, etc.)
+   Light mode is untouched: these rules only apply when your
+   navbar toggle sets data-theme="dark" on <html>.
+   ───────────────────────────────────────────────────────────── */
+
+/* Popup box: same dark slate as the sign-in / sign-up card */
+[data-theme="dark"] .swal2-popup {
+  background: #0f172a;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+}
+
+/* Title + message text */
+[data-theme="dark"] .swal2-title {
+  color: #f1f5f9;
+}
+[data-theme="dark"] .swal2-html-container {
+  color: #cbd5e1;
+}
+
+/* Success icon: its white "cut-out" pieces must match the dark popup, otherwise white patches show */
+[data-theme="dark"] .swal2-success [class^="swal2-success-circular-line"],
+[data-theme="dark"] .swal2-success .swal2-success-fix {
+  background: #0f172a !important;
+}
+
+/* Cancel button (e.g. shop "You are not Logged In"): dark outlined look */
+[data-theme="dark"] .swal2-cancel {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+}
+[data-theme="dark"] .swal2-cancel:hover {
+  background: #334155;
+}
+
+/* Close (X) button and timer progress bar */
+[data-theme="dark"] .swal2-close {
+  color: #94a3b8;
+}
+[data-theme="dark"] .swal2-timer-progress-bar {
+  background: rgba(255, 255, 255, 0.25);
 }

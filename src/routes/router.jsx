@@ -1,9 +1,11 @@
+// 📁 PATH: src/routes/router.jsx  (MODIFIED existing file – replace the whole file)
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import Home from "../pages/Home/Home/Home";
 import ErrorPage from "../pages/ErrorPage/ErrorPage";
 import SignIn from "../pages/SignIn/SignIn";
 import SignUp from "../pages/SignUp/SignUp";
+import ForgotPassword from "../pages/ForgotPassword/ForgotPassword"; // NEW
 import DetailsCard from "../pages/CategoryDetails/DetailsCard";
 import Shop from "../pages/Shop/Shop";
 import Cart from "../pages/Cart/Cart";
@@ -67,6 +69,10 @@ const router = createBrowserRouter([
             {
                 path: 'signIn',
                 element: <SignIn></SignIn>,
+            },
+            {
+                path: 'forgot-password', // NEW: opened from "Forgot password?" on the Sign In page
+                element: <ForgotPassword></ForgotPassword>,
             },
             {
                 path: 'update-profile',

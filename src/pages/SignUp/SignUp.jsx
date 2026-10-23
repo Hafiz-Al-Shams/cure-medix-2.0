@@ -1,4 +1,5 @@
-import { useContext } from "react";
+// 📁 PATH: src/pages/SignUp/SignUp.jsx  (MODIFIED existing file – replace the whole file; now adapts to dark mode)
+import { useContext, useState } from "react";
 import AuthContext from "../../context/AuthContext/AuthContext";
 import Swal from "sweetalert2";
 import { Link, useNavigate } from "react-router-dom";
@@ -6,224 +7,170 @@ import { Helmet } from "react-helmet-async";
 import SocialLogin from "../SocialLogin/SocialLogin";
 import { useForm } from "react-hook-form";
 import useAxiosPublic from "../../hooks/useAxiosPublic";
-// import { db } from "../../firebase/firebase.init";
+import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiLogIn, FiUserPlus, FiUserCheck, FiUploadCloud, FiChevronDown } from "react-icons/fi";
 
-
-
-const image_hosting_key = import.meta.env.VITE_IMAGE_HOSTING_KEY;
+const image_hosting_key = import.meta.env.VITE_IMAGE_HOSTING_KEY; // imgbb key (unchanged)
 const image_hosting_api = `https://api.imgbb.com/1/upload?key=${image_hosting_key}`;
 
-
-
 const SignUp = () => {
-
     const axiosPublic = useAxiosPublic();
-    const { register, handleSubmit, reset, formState: { errors } } = useForm();
+    const { register, handleSubmit, reset, formState: { errors } } = useForm(); // react-hook-form (unchanged)
     const { createUser, updateUserProfile, signOutUser } = useContext(AuthContext);
     const navigate = useNavigate();
+    const [showPassword, setShowPassword] = useState(false); // NEW: eye icon toggle
 
+    // ✅ Whole sign-up flow unchanged: upload image -> create user -> update profile -> save in DB -> sign out -> go to login
     const onSubmit = async (data) => {
-
-
-        const imageFile = { image: data.image[0] }
+        const imageFile = { image: data.image[0] };
         const res = await axiosPublic.post(image_hosting_api, imageFile, {
-            headers: {
-                'content-type': 'multipart/form-data'
-            }
+            headers: { "content-type": "multipart/form-data" },
         });
         if (res.data.success) {
-
             createUser(data.email, data.password)
-                .then(result => {
-                    const loggedUser = result.user;
-                    // console.log(loggedUser);
+                .then(() => {
                     updateUserProfile({ displayName: data.name, photoURL: res.data.data.display_url })
                         .then(() => {
                             // creating user entry in the database
-                            const userInfo = {
-                                name: data.name,
-                                email: data.email,
-                                role: data.role,
-                            }
-                            axiosPublic.post('/users', userInfo)
-                                .then(res => {
-                                    if (res.data.insertedId) {
-                                        // console.log('user added to the database');
-
-                                        signOutUser()
-                                            .then(() => {
-                                                // console.log('user signOut successful');
-                                                Swal.fire({
-                                                    title: 'Sign Up Successful',
-                                                    text: 'Now please Login to Continue',
-                                                    icon: 'success',
-                                                    confirmButtonText: 'ok'
-                                                });
-                                                reset();
-                                                navigate('/signIn');
-                                            })
-                                            .catch(error => console.log('ERROR', error.message))
-
-
-
-
-                                        // old
-                                        // Swal.fire({
-                                        //     position: 'center-left',
-                                        //     icon: 'success',
-                                        //     title: 'Sign Up successful.',
-                                        //     showConfirmButton: false,
-                                        //     timer: 1000
-                                        // });
-                                        // navigate('/');
-                                    }
-                                })
-
-
+                            const userInfo = { name: data.name, email: data.email, role: data.role };
+                            axiosPublic.post("/users", userInfo).then((res) => {
+                                if (res.data.insertedId) {
+                                    signOutUser()
+                                        .then(() => {
+                                            Swal.fire({
+                                                title: "Sign Up Successful",
+                                                text: "Now please Login to Continue",
+                                                icon: "success",
+                                                confirmButtonText: "ok",
+                                                buttonsStyling: false, // teal button to match the theme
+                                                customClass: { popup: "rounded-2xl", confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold" },
+                                            });
+                                            reset();
+                                            navigate("/signIn");
+                                        })
+                                        .catch((error) => console.log("ERROR", error.message));
+                                }
+                            });
                         })
-                        .catch(error => console.log(error))
-                })
-
-
+                        .catch((error) => console.log(error));
+                });
         }
-
-        // console.log(data.email);
-        // console.log(data.name);
-        // console.log(data.password);
-        // console.log(data.photoURL);
-        // console.log(data.role);
-
-
     };
 
+    // Shared input look + red error text
+    const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:text-slate-100 [[data-theme=dark]_&]:placeholder:text-slate-500 [[data-theme=dark]_&]:[color-scheme:dark]";
+    const labelClass = "text-sm font-semibold text-slate-800 [[data-theme=dark]_&]:text-slate-100";
+    const errClass = "text-xs text-red-600 mt-1 [[data-theme=dark]_&]:text-red-400";
 
     return (
-        <>
-            <div className="hero bg-base-100 min-h-[60vh] mt-3 mb-4 md:mb-10 lg:mb-20">
-                <Helmet>
-                    <title>CureMedix | Sign Up</title>
-                </Helmet>
+        <div className="min-h-[80vh] flex items-center justify-center p-4 py-10">
+            <Helmet>
+                <title>CureMedix | Sign Up</title>
+            </Helmet>
 
-                <div className="hero-content flex-col lg:flex-row gap-4 md:gap-7 lg:gap-12 p-6 items-start">
-                    {/* Left Side Text */}
-                    <div className="flex flex-col justify-center text-center lg:text-left lg:w-1/2 space-y-4 mt-5 md:mt-8 lg:mt-40">
-                        <h1 className="text-3xl lg:text-4xl font-extrabold text-base-content">Join the CureMedix Community</h1>
-                        <p className="text-lg text-base-content/85">
-                            Sign up to access premium healthcare products and services. It is quick and easy.
-                        </p>
+            {/* ONE card with the same border on left, right, top and bottom */}
+            <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl [[data-theme=dark]_&]:bg-slate-900 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:shadow-black/50">
+                {/* ── Form area inside the card ── */}
+                <div className="p-6 sm:p-10 lg:p-12">
+                    {/* Sign In / Sign Up tab switch */}
+                    <div className="flex w-fit mx-auto bg-slate-100 border border-slate-200 rounded-2xl p-1 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 text-sm font-semibold">
+                        <Link to="/signIn" className="flex items-center gap-2 px-8 py-2 rounded-xl text-slate-500 hover:text-teal-700 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:hover:text-teal-300"><FiLogIn /> Sign In</Link>
+                        <span className="flex items-center gap-2 px-8 py-2 rounded-xl bg-white text-teal-700 shadow-sm [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-teal-300"><FiUserPlus /> Sign Up</span>
                     </div>
 
-                    {/* Right Side Form */}
-                    <div className="card w-full max-w-lg mx-auto lg:w-96 bg-white shadow-xl rounded-xl p-8">
-
-                        <form onSubmit={handleSubmit(onSubmit)} className="card-body">
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text text-neutral">Name</span>
-                                </label>
-                                <input type="text"  {...register("name", { required: true })} name="name" placeholder="Name" className="input input-bordered" />
-                                {errors.name && <span className="text-red-600">Name is required</span>}
+                    <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+                        {/* Name */}
+                        <div>
+                            <label className={labelClass}>Name <span className="text-red-500">*</span></label>
+                            <div className="relative mt-1.5">
+                                <FiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="text" {...register("name", { required: true })} placeholder="Enter full name" className={inputClass} />
                             </div>
+                            {errors.name && <p className={errClass}>Name is required</p>}
+                        </div>
 
-
-                            {/* old photoUrl taking input */}
-                            {/* <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">Photo URL</span>
-                                </label>
-                                <input type="text"  {...register("photoURL", { required: true })} placeholder="Photo URL" className="input input-bordered" />
-                                {errors.photoURL && <span className="text-red-600">Photo URL is required</span>}
-                            </div> */}
-
-
-                            {/* testing area */}
-                            {/* Image Upload */}
-                            <div className="form-control my-2.5">
-                                <label className="label">
-                                    <span className="label-text text-neutral">Upload Image*</span>
-                                </label>
-                                <input
-                                    {...register("image", { required: "Image is required" })}
-                                    type="file"
-                                    className="file-input w-full max-w-xs"
-                                />
-                                {errors.image && <p className="text-red-500">{errors.image.message}</p>}
+                        {/* Image upload (dashed box) */}
+                        <div>
+                            <label className={labelClass}>Upload Image<span className="text-red-500">*</span></label>
+                            <div className="mt-1.5 flex items-center gap-3 border border-dashed border-slate-300 bg-slate-50 rounded-xl p-3 [[data-theme=dark]_&]:border-slate-600 [[data-theme=dark]_&]:bg-slate-800">
+                                <div className="w-10 h-10 shrink-0 rounded-lg bg-slate-200 text-slate-500 [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-slate-300 flex items-center justify-center text-xl"><FiUploadCloud /></div>
+                                <div className="min-w-0">
+                                    <input
+                                        {...register("image", { required: "Image is required" })}
+                                        type="file"
+                                        accept="image/*"
+                                        className="text-xs text-slate-500 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:file:bg-slate-100 [[data-theme=dark]_&]:file:text-slate-900 file:mr-2 file:rounded-md file:border-0 file:bg-slate-900 file:text-white file:text-[11px] file:font-bold file:uppercase file:px-3 file:py-1.5 file:cursor-pointer"
+                                    />
+                                    <p className="text-[10px] text-slate-400 [[data-theme=dark]_&]:text-slate-500 mt-1">JPG, PNG or WEBP (Max 5MB)</p>
+                                </div>
                             </div>
+                            {errors.image && <p className={errClass}>{errors.image.message}</p>}
+                        </div>
 
-                            {/* testing area */}
-
-
-
-
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text text-neutral">Email</span>
-                                </label>
-                                <input type="email"  {...register("email", { required: true })} name="email" placeholder="email" className="input input-bordered" />
-                                {errors.email && <span className="text-red-600">Email is required</span>}
+                        {/* Email */}
+                        <div>
+                            <label className={labelClass}>Email <span className="text-red-500">*</span></label>
+                            <div className="relative mt-1.5">
+                                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="email" {...register("email", { required: true })} placeholder="email@domain.com" className={inputClass} />
                             </div>
+                            {errors.email && <p className={errClass}>Email is required</p>}
+                        </div>
 
-                            {/* Select Role */}
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text text-neutral">Select Role</span>
-                                </label>
-                                <select
-                                    {...register("role", { required: "Role is required" })}
-                                    className="select select-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
+                        {/* Role */}
+                        <div>
+                            <label className={labelClass}>Select Role <span className="text-red-500">*</span></label>
+                            <div className="relative mt-1.5">
+                                <FiUserCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <select {...register("role", { required: "Role is required" })} className={`${inputClass} appearance-none font-semibold`}>
                                     <option value="user">User</option>
                                     <option value="seller">Seller</option>
                                 </select>
-                                {errors.role && <span className="text-red-600">{errors.role.message}</span>}
+                                <FiChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>
-
-
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text text-neutral">Password</span>
-                                </label>
-                                <input type="password"  {...register("password", {
-                                    required: true,
-                                    minLength: 6,
-                                    maxLength: 20,
-                                    pattern: /(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z])/
-                                })} placeholder="password" className="input input-bordered" />
-                                {errors.password?.type === 'required' &&
-                                    <p className="text-red-600">Password is required</p>}
-                                {errors.password?.type === 'minLength' && <p className="text-red-600">Password must be 6 characters</p>}
-                                {errors.password?.type === 'maxLength' && <p className="text-red-600">Password must be less than 20 characters</p>}
-                                {errors.password?.type === 'pattern' && <p className="text-red-600">Password must have one Uppercase one lower case, one number and one special character.</p>}
-                                {/* <label className="label">
-                                    <a href="#" className="label-text-alt link link-hover">Forgot password?</a>
-                                </label> */}
-                            </div>
-                            <div className="form-control mt-6">
-                                <input className="btn bg-emerald-600 text-white border-0 w-full py-2 mt-4 hover:text-neutral" type="submit" value="Sign Up" />
-                            </div>
-                        </form>
-
-
-
-                        {/* Already have an account? */}
-                        <div className="text-center mt-4">
-                            <p className="text-neutral lg:text-lg">Already have an account?</p>
-                            <Link to="/signIn">
-                                <button className="btn btn-outline border-emerald-600 text-neutral mt-1.5 w-full">Sign In</button>
-                            </Link>
+                            {errors.role && <p className={errClass}>{errors.role.message}</p>}
                         </div>
 
-                        {/* Social Login */}
-                        <div className="mt-6">
-                            <SocialLogin />
+                        {/* Password (same validation rules) */}
+                        <div>
+                            <label className={labelClass}>Password <span className="text-red-500">*</span></label>
+                            <div className="relative mt-1.5">
+                                <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    {...register("password", {
+                                        required: true,
+                                        minLength: 6,
+                                        maxLength: 20,
+                                        pattern: /(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z])/,
+                                    })}
+                                    placeholder="password"
+                                    className={inputClass}
+                                />
+                                <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 [[data-theme=dark]_&]:hover:text-slate-200">
+                                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                                </button>
+                            </div>
+                            {errors.password?.type === "required" && <p className={errClass}>Password is required</p>}
+                            {errors.password?.type === "minLength" && <p className={errClass}>Password must be 6 characters</p>}
+                            {errors.password?.type === "maxLength" && <p className={errClass}>Password must be less than 20 characters</p>}
+                            {errors.password?.type === "pattern" && <p className={errClass}>Password must have one Uppercase one lower case, one number and one special character.</p>}
                         </div>
-                    </div>
 
+                        {/* Submit */}
+                        <button type="submit" className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-bold text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-600/30 hover:brightness-110 transition">
+                            <FiUserPlus /> Sign Up
+                        </button>
+                    </form>
+
+                    <p className="text-center text-sm text-slate-500 [[data-theme=dark]_&]:text-slate-400 mt-4">
+                        Already have an account? <Link to="/signIn" className="font-bold text-teal-600 hover:underline [[data-theme=dark]_&]:text-teal-400">Sign In</Link>
+                    </p>
+
+                    <SocialLogin label="Continue with Google" /> {/* same text as the Sign In page */}
                 </div>
             </div>
-        </>
+        </div>
     );
-
 };
 
 export default SignUp;

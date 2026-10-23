@@ -1,127 +1,103 @@
-import { useContext } from "react";
+// 📁 PATH: src/pages/SignIn/SignIn.jsx  (MODIFIED existing file – replace the whole file; "Forgot password?" now opens /forgot-password)
+import { useContext, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthContext from "../../context/AuthContext/AuthContext";
 import Swal from "sweetalert2";
 import SocialLogin from "../SocialLogin/SocialLogin";
-
-
+import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn, FiUserPlus } from "react-icons/fi";
 
 const SignIn = () => {
-
-    const { signInUser } = useContext(AuthContext);
+    const { signInUser } = useContext(AuthContext); // Firebase sign-in function (unchanged)
     const navigate = useNavigate();
     const location = useLocation();
+    const [showPassword, setShowPassword] = useState(false); // NEW: eye icon toggle
 
-    const from = location.state?.from?.pathname || "/";
-    // console.log('state in the location login page', location.state);
+    const from = location.state?.from?.pathname || "/"; // where to go after login (unchanged)
 
-    const handleSignIn = e => {
+    // ✅ Login logic unchanged
+    const handleSignIn = (e) => {
         e.preventDefault();
         const form = e.target;
         const email = form.email.value;
         const password = form.password.value;
-        // console.log(email, password);
 
         signInUser(email, password)
-            .then(result => {
-                // console.log('Login successful: ', result.user.email);
-
-                Swal.fire({
-                    position: "center",
-                    icon: "success",
-                    title: 'Login Successful',
-                    showConfirmButton: false,
-                    timer: 1000
-                });
+            .then(() => {
+                Swal.fire({ position: "center", icon: "success", title: "Login Successful", showConfirmButton: false, timer: 1000 });
                 e.target.reset();
-                navigate(from, { replace: true });
+                navigate(from, { replace: true }); // back to the page the user came from
             })
-            .catch(error => {
-                console.log('ERROR from Firebase', error.message);
+            .catch((error) => {
+                console.log("ERROR from Firebase", error.message);
                 Swal.fire({
-                    title: 'Error!',
-                    text: 'Invalid Email or Password!!',
-                    icon: 'error',
-                    confirmButtonText: 'Try Again'
+                    title: "Error!",
+                    text: "Invalid Email or Password!!",
+                    icon: "error",
+                    confirmButtonText: "Try Again",
+                    buttonsStyling: false, // teal button to match the theme
+                    customClass: { popup: "rounded-2xl", confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold" },
                 });
-                // e.target.reset();
-            })
+            });
+    };
 
-    }
-
-
-    // return null;
-
+    // Shared input look (rounded, soft grey, teal focus ring)
+    const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:text-slate-100 [[data-theme=dark]_&]:placeholder:text-slate-500 [[data-theme=dark]_&]:[color-scheme:dark]";
 
     return (
-        <div className="hero bg-base-100 min-h-[60vh] mt-3">
-
+        // Page keeps the default white background, form card centered
+        <div className="min-h-[80vh] flex items-center justify-center p-4 py-10">
             <Helmet>
                 <title>CureMedix | Sign In</title>
             </Helmet>
 
-            <div className="hero-content flex-col lg:flex-row gap-12 p-6 items-start">
-                {/* Left Side Text */}
-                <div className="flex flex-col justify-center text-center lg:text-left lg:w-1/2 space-y-4 mt-5 md:mt-8 lg:mt-40">
-                    <h1 className="text-2xl lg:text-4xl font-extrabold text-base-content">Welcome Back to CureMedix</h1>
-                    <p className="text-lg text-base-content/85">
-                        Sign in to access your account and explore our premium healthcare products and services.
-                    </p>
-                </div>
+            {/* ONE card with the same border on left, right, top and bottom */}
+            <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl [[data-theme=dark]_&]:bg-slate-900 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:shadow-black/50">
+                {/* ── Form area inside the card ── */}
+                <div className="p-6 sm:p-10 lg:p-12">
+                    {/* Sign In / Sign Up tab switch */}
+                    <div className="flex w-fit mx-auto bg-slate-100 border border-slate-200 rounded-2xl p-1 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 text-sm font-semibold">
+                        <span className="flex items-center gap-2 px-8 py-2 rounded-xl bg-white text-teal-700 shadow-sm [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-teal-300"><FiLogIn /> Sign In</span>
+                        <Link to="/signUp" state={location.state} className="flex items-center gap-2 px-8 py-2 rounded-xl text-slate-500 hover:text-teal-700 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:hover:text-teal-300"><FiUserPlus /> Sign Up</Link>
+                    </div>
 
-                {/* Right Side Form */}
-                <div className="card w-full max-w-lg mx-auto lg:w-96 bg-white shadow-xl rounded-xl p-8">
-                    <form onSubmit={handleSignIn} className="space-y-6">
+                    <form onSubmit={handleSignIn} className="mt-8 space-y-5">
                         {/* Email */}
-                        <div className="form-control">
-                            <label className="label">
-                                <span className="label-text text-gray-700">Email</span>
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                placeholder="Enter your email"
-                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            />
+                        <div>
+                            <label className="text-sm font-semibold text-slate-800 [[data-theme=dark]_&]:text-slate-100">Email Address <span className="text-red-500">*</span></label>
+                            <div className="relative mt-1.5">
+                                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type="email" name="email" placeholder="Enter your email" className={inputClass} required />
+                            </div>
                         </div>
 
-                        {/* Password */}
-                        <div className="form-control">
-                            <label className="label">
-                                <span className="label-text text-gray-700">Password</span>
-                            </label>
-                            <input
-                                type="password"
-                                name="password"
-                                placeholder="Enter your password"
-                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            />
-                            {/* <label className="label">
-                                <a href="#" className="label-text-alt link link-hover text-blue-500">Forgot password?</a>
-                            </label> */}
+                        {/* Password + show/hide */}
+                        <div>
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-semibold text-slate-800 [[data-theme=dark]_&]:text-slate-100">Password <span className="text-red-500">*</span></label>
+                                <Link to="/forgot-password" state={location.state} className="text-xs font-semibold text-teal-600 hover:underline [[data-theme=dark]_&]:text-teal-400">Forgot password?</Link> {/* now opens the real page */}
+                            </div>
+                            <div className="relative mt-1.5">
+                                <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input type={showPassword ? "text" : "password"} name="password" placeholder="Enter your password" className={inputClass} required />
+                                <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 [[data-theme=dark]_&]:hover:text-slate-200">
+                                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Submit Button */}
-                        <div className="form-control">
-                            <button className="btn bg-emerald-600 text-white border-0 w-full py-2 mt-4 hover:text-neutral">Sign In</button>
-                        </div>
+                        {/* Submit */}
+                        <button type="submit" className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-bold text-sm bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-600/30 hover:brightness-110 transition">
+                            <FiLogIn /> Sign In
+                        </button>
                     </form>
 
-                    {/* New Account */}
-                    <div className="text-center mt-4">
-                        <p className="text-neutral lg:text-lg">New to CureMedix?</p>
-                        <Link to="/signUp">
-                            <button className="btn btn-outline border-emerald-600 text-neutral mt-1.5 w-full">Create an Account</button>
-                        </Link>
-                    </div>
+                    <p className="text-center text-sm text-slate-500 [[data-theme=dark]_&]:text-slate-400 mt-5">
+                        New to CureMedix? <Link to="/signUp" state={location.state} className="font-bold text-teal-600 hover:underline [[data-theme=dark]_&]:text-teal-400">Create an Account</Link>
+                    </p>
 
-                    {/* Social Login */}
-                    <div className="">
-                        <SocialLogin />
-                    </div>
+                    {/* Google login (same component as before) */}
+                    <SocialLogin label="Continue with Google" />
                 </div>
             </div>
         </div>
