@@ -1,9 +1,9 @@
-// 📁 PATH: src/pages/OnlineDoctor/OnlineDoctor.jsx  (MODIFIED existing file – replace the whole file)
+// 📁 PATH: src/pages/OnlineDoctor/OnlineDoctor.jsx  (MODIFIED existing file – replace the whole file; wait-time card removed)
 import { useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import Swal from "sweetalert2";
-import { FaStethoscope } from "react-icons/fa";
-import { FiShield, FiFileText, FiUserCheck, FiMapPin, FiCalendar, FiVideo, FiMic, FiMaximize, FiPhoneOff, FiZap, FiX, FiSearch, FiCheck, FiDownload, FiArrowRight } from "react-icons/fi";
+import { FaStethoscope, FaHospital } from "react-icons/fa"; // FaHospital = building icon on the certificate
+import { FiShield, FiFileText, FiUserCheck, FiMapPin, FiCalendar, FiVideo, FiMic, FiMaximize, FiPhoneOff, FiX, FiSearch, FiCheck, FiDownload, FiArrowRight, FiClock } from "react-icons/fi";
 
 // ───────────── Static data (edit freely) ─────────────
 // "group" decides which filter chip a doctor appears under
@@ -44,16 +44,17 @@ const DoctorImg = ({ doc }) => {
     );
 };
 
-// Reusable popup shell (dark backdrop, rounded white box, X button) used by all 3 popups
-const Modal = ({ title, subtitle, onClose, children }) => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4" onClick={onClose}> {/* click outside = close */}
-        <div className="w-full max-w-xl bg-base-100 text-base-content rounded-3xl shadow-2xl border border-base-content/10 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between px-6 py-5 border-b border-base-content/10">
+// Reusable popup shell used by all 3 popups.
+// size = popup width | tinted = light grey header strip (booking popup) | plain = small title + bare X + inset divider (prescription popup)
+const Modal = ({ title, subtitle, onClose, size = "max-w-xl", tinted = false, plain = false, children }) => (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}> {/* click outside = close */}
+        <div className={`w-full ${size} bg-base-100 text-base-content rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
+            <div className={plain ? "mx-6 pt-6 pb-4 border-b border-base-content/10 flex items-center justify-between" : `flex items-start justify-between px-6 py-5 border-b border-base-content/10 ${tinted ? "bg-base-200/50" : ""}`}>
                 <div>
-                    <h3 className="text-lg font-bold">{title}</h3>
+                    <h3 className={plain ? "text-base font-bold" : "text-lg font-bold"}>{title}</h3>
                     {subtitle && <p className="text-sm font-semibold text-teal-600">{subtitle}</p>}
                 </div>
-                <button onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-full bg-base-200 hover:bg-base-300 flex items-center justify-center"><FiX /></button>
+                <button onClick={onClose} aria-label="Close" className={plain ? "text-base-content/50 hover:text-base-content text-lg" : "w-9 h-9 rounded-full bg-base-200 hover:bg-base-300 flex items-center justify-center"}><FiX /></button>
             </div>
             <div className="p-6">{children}</div>
         </div>
@@ -70,6 +71,10 @@ const OnlineDoctor = () => {
     const [showClinics, setShowClinics] = useState(false); // inpatient hospitals popup
     const [cityInput, setCityInput] = useState("");
     const [clinicQuery, setClinicQuery] = useState("");
+    const [step, setStep] = useState(1); // booking popup: 1 = date & time, 2 = patient details
+    const [fullName, setFullName] = useState(""); // step 2 fields
+    const [reason, setReason] = useState("");
+    const [formError, setFormError] = useState("");
 
     // Next 3 days built from today's real date: Today / Tomorrow / weekday name
     const days = [0, 1, 2].map((n) => {
@@ -83,13 +88,16 @@ const OnlineDoctor = () => {
     const visibleClinics = hospitals.filter((h) => `${h.name} ${h.address}`.toLowerCase().includes(clinicQuery.toLowerCase()));
 
     const scrollToDoctors = () => doctorsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); // "To the CureMedix Online Doctor"
-    const openBooking = (doc) => { setDateIdx(0); setTime("11:00 AM"); setBookingDoc(doc); };
+    // Opens the booking popup fresh (step 1, default slot, empty form)
+    const openBooking = (doc) => { setDateIdx(0); setTime("11:00 AM"); setStep(1); setFullName(""); setReason(""); setFormError(""); setBookingDoc(doc); };
+    const closeBooking = () => setBookingDoc(null);
 
-    // "Next: Patient Details" -> closes popup and confirms the chosen slot
-    const confirmSlot = () => {
-        const summary = `${bookingDoc.name} • ${days[dateIdx].label} (${days[dateIdx].sub}) at ${time}`;
-        setBookingDoc(null);
-        Swal.fire({ icon: "success", title: "Appointment Requested", text: summary, confirmButtonText: "OK", buttonsStyling: false, customClass: { popup: "rounded-2xl", confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold" } });
+    // Step 2 "Confirm Appointment": checks both fields, closes the popup and confirms the booking
+    const confirmAppointment = () => {
+        if (!fullName.trim() || !reason.trim()) { setFormError("Please enter your name and the reason for your visit."); return; }
+        const summary = `${fullName.trim()} • ${bookingDoc.name} • ${days[dateIdx].label} (${days[dateIdx].sub}) at ${time}`;
+        closeBooking();
+        Swal.fire({ icon: "success", title: "Appointment Confirmed", text: summary, confirmButtonText: "OK", buttonsStyling: false, customClass: { popup: "rounded-2xl", confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold" } });
     };
 
     return (
@@ -103,19 +111,19 @@ const OnlineDoctor = () => {
                 <div className="max-w-screen-xl mx-auto px-4 pt-14 pb-24 grid lg:grid-cols-2 gap-12 items-center">
                     <div>
                         <span className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-300 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400" /> Your online doctor 24/7 at your Service...
+                            <FiClock /> Your online doctor 24/7 at your Service... {/* clock icon like the design */}
                         </span>
-                        <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.05]">
-                            Goodbye waiting room.<br /><span className="text-emerald-300">Hello online doctor.</span>
+                        <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight">
+                            Goodbye waiting room.<br /><span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">Hello online doctor.</span> {/* green→mint gradient text */}
                         </h1>
                         <p className="mt-5 text-base md:text-lg text-white/75 max-w-xl">
                             Speak to a qualified specialist online in just a few minutes via CureMedix. You can receive a certified sick note (AU) and electronic prescriptions directly via the platform.
                         </p>
                         <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                            <button onClick={scrollToDoctors} className="btn border-0 bg-gradient-to-r from-emerald-600 to-teal-500 text-white gap-2 shadow-lg shadow-emerald-600/30"><FaStethoscope /> To the CureMedix Online Doctor</button>
+                            <button onClick={scrollToDoctors} className="btn border-0 bg-emerald-500 hover:bg-emerald-600 text-white gap-2 shadow-lg shadow-emerald-500/30"><FaStethoscope /> To the CureMedix Online Doctor</button>
                             <button onClick={() => setShowClinics(true)} className="btn bg-white/5 border border-white/15 text-white hover:bg-white/10 gap-2"><FiMapPin className="text-emerald-400" /> Find an inpatient doctor near you</button>
                         </div>
-                        <div className="mt-10 pt-5 border-t border-white/10 flex flex-wrap gap-x-10 gap-y-3 text-xs text-white/70">
+                        <div className="mt-10 pt-5 border-t border-white/10 flex flex-wrap justify-between gap-x-8 gap-y-3 text-xs text-white/70 max-w-2xl"> {/* badges spread evenly */}
                             <span className="flex items-center gap-2"><FiShield className="text-emerald-400" /> GDPR &amp; HIPAA Compliant</span>
                             <span className="flex items-center gap-2"><FiFileText className="text-emerald-400" /> Official E-Prescriptions</span>
                             <span className="flex items-center gap-2"><FiUserCheck className="text-emerald-400" /> Licensed Specialists</span>
@@ -129,19 +137,14 @@ const OnlineDoctor = () => {
                                 <img src="https://i.ibb.co/b5zPg2by/online-doctor.jpg" alt="Online Doctor" className="w-full h-full object-cover" /> {/* your original doctor image */}
                                 <span className="absolute left-3 top-3 flex items-center gap-1.5 text-[11px] font-semibold bg-black/55 rounded-full px-3 py-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Dr. Sarah Jenkins</span>
                                 <span className="absolute right-3 top-3 text-[11px] font-mono text-emerald-300 bg-black/55 rounded px-2 py-1">12:45 Live</span>
-                                <div className="absolute right-4 top-1/2 w-20 h-28 rounded-xl border-2 border-white/30 bg-gradient-to-b from-slate-500 to-slate-700" /> {/* small self-view */}
-                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3 bg-black/60 rounded-2xl px-4 py-2.5">
+                                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=280&fit=crop" alt="You" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute right-4 top-1/2 w-20 h-28 rounded-xl border-2 border-white/30 object-cover bg-slate-600" /> {/* small self-view photo */}
+                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] justify-center flex gap-4 bg-black/65 rounded-2xl px-4 py-2.5">
                                     <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"><FiMic /></span>
                                     <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"><FiVideo /></span>
                                     <span className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center"><FiMaximize /></span>
                                     <span className="w-9 h-9 rounded-full bg-rose-500 flex items-center justify-center"><FiPhoneOff /></span>
                                 </div>
                             </div>
-                        </div>
-                        {/* Floating wait-time card */}
-                        <div className="absolute -bottom-8 left-2 sm:left-6 lg:-left-6 flex items-center gap-3 bg-white text-slate-800 rounded-2xl px-4 py-3 shadow-xl">
-                            <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><FiZap /></span>
-                            <div className="text-xs"><p className="font-semibold">Avg. Wait Time</p><p className="font-bold text-teal-600">&lt; 4 Minutes</p></div>
                         </div>
                     </div>
                 </div>
@@ -157,7 +160,7 @@ const OnlineDoctor = () => {
                     <div className="mt-9 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                         {steps.map((s, i) => (
                             <div key={s.title} className="relative border border-base-content/10 rounded-2xl p-5 bg-base-100">
-                                <span className="absolute right-5 top-4 text-3xl font-bold text-base-content/10">{`0${i + 1}`}</span>
+                                <span className="absolute right-5 top-4 text-3xl font-bold text-teal-600/15">{`0${i + 1}`}</span>
                                 <div className="w-10 h-10 rounded-xl bg-emerald-50 text-teal-600 flex items-center justify-center text-lg">{s.icon}</div>
                                 <h3 className="mt-5 font-semibold">{s.title}</h3>
                                 <p className="text-xs text-base-content/60 mt-1.5">{s.text}</p>
@@ -168,7 +171,7 @@ const OnlineDoctor = () => {
             </section>
 
             {/* ═════════ 3. DOCTOR LIST (hero button scrolls here) ═════════ */}
-            <section ref={doctorsRef} className="bg-base-200/60 py-14 lg:py-16 scroll-mt-16">
+            <section ref={doctorsRef} className="bg-base-200/60 border-y border-base-content/5 py-14 lg:py-16 scroll-mt-28">
                 <div className="max-w-screen-xl mx-auto px-4">
                     <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
                         <div>
@@ -198,7 +201,7 @@ const OnlineDoctor = () => {
                                     <div><p className="text-[10px] text-base-content/50">Next Availability</p><p className="text-xs font-bold text-teal-700">{doc.next}</p></div>
                                     <div className="text-right"><p className="text-[10px] text-base-content/50">Consultation Fee</p><p className="text-xs font-bold">{doc.fee}$</p></div>
                                 </div>
-                                <button onClick={() => openBooking(doc)} className="btn btn-sm w-full mt-4 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2"><FiCalendar /> Book Appointment</button>
+                                <button onClick={() => openBooking(doc)} className="btn btn-sm w-full mt-4 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 shadow-md shadow-teal-600/25"><FiCalendar /> Book Appointment</button>
                             </div>
                         ))}
                     </div>
@@ -227,7 +230,7 @@ const OnlineDoctor = () => {
                     <div className="max-w-md w-full mx-auto bg-base-100 border border-base-content/10 rounded-3xl p-5 shadow-2xl">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <span className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center"><FaStethoscope /></span>
+                                <span className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center"><FaHospital /></span>
                                 <div><p className="text-xs font-bold">CureMedix Health Network</p><p className="text-[10px] text-base-content/50">Official Electronic Certificate</p></div>
                             </div>
                             <span className="text-[9px] font-bold text-teal-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">VALID &amp; VERIFIED</span>
@@ -271,30 +274,46 @@ const OnlineDoctor = () => {
                 </div>
             </section>
 
-            {/* ═════════ POPUP: Book Video Consultation ═════════ */}
+            {/* ═════════ POPUP: Book Video Consultation (step 1 = date/time, step 2 = patient details) ═════════ */}
             {bookingDoc && (
-                <Modal title="Book Video Consultation" subtitle={bookingDoc.name} onClose={() => setBookingDoc(null)}>
-                    <p className="text-sm font-semibold mb-3">1. Select Date</p>
-                    <div className="grid grid-cols-3 gap-3">
-                        {days.map((d, i) => (
-                            <button key={d.label} onClick={() => setDateIdx(i)} className={`rounded-xl border py-2.5 text-center ${dateIdx === i ? "border-teal-500 bg-emerald-50 text-teal-700" : "border-base-content/10 hover:border-teal-400"}`}>
-                                <p className="text-sm font-bold">{d.label}</p><p className="text-[11px] opacity-70">{d.sub}</p>
-                            </button>
-                        ))}
-                    </div>
-                    <p className="text-sm font-semibold mt-6 mb-3">2. Available Time Slots</p>
-                    <div className="grid grid-cols-3 gap-3">
-                        {timeSlots.map((t) => (
-                            <button key={t} onClick={() => setTime(t)} className={`rounded-xl border py-2.5 text-sm font-bold ${time === t ? "border-teal-500 bg-emerald-50 text-teal-700" : "border-base-content/10 hover:border-teal-400"}`}>{t}</button>
-                        ))}
-                    </div>
-                    <button onClick={confirmSlot} className="btn w-full mt-5 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 rounded-xl">Next: Patient Details <FiArrowRight /></button>
+                <Modal title="Book Video Consultation" subtitle={bookingDoc.name} onClose={closeBooking} tinted>
+                    {step === 1 ? (
+                        <>
+                            <p className="text-sm font-semibold mb-3">1. Select Date</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                {days.map((d, i) => (
+                                    <button key={d.label} onClick={() => setDateIdx(i)} className={`rounded-xl border py-2.5 text-center ${dateIdx === i ? "border-teal-500 bg-teal-50 text-teal-700 [[data-theme=dark]_&]:bg-teal-900/30 [[data-theme=dark]_&]:text-teal-300" : "border-base-content/10 hover:border-teal-400"}`}>
+                                        <p className="text-sm font-bold">{d.label}</p><p className="text-[11px] opacity-70">{d.sub}</p>
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-sm font-semibold mt-6 mb-3">2. Available Time Slots</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                {timeSlots.map((t) => (
+                                    <button key={t} onClick={() => setTime(t)} className={`rounded-xl border py-2.5 text-sm font-bold ${time === t ? "border-teal-500 bg-teal-50 text-teal-700 [[data-theme=dark]_&]:bg-teal-900/30 [[data-theme=dark]_&]:text-teal-300" : "border-base-content/10 hover:border-teal-400"}`}>{t}</button>
+                                ))}
+                            </div>
+                            <button onClick={() => setStep(2)} className="btn w-full mt-5 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 rounded-xl">Next: Patient Details <FiArrowRight /></button> {/* goes to step 2 */}
+                        </>
+                    ) : (
+                        <>
+                            <label className="text-sm font-semibold">Full Name</label>
+                            <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" className="mt-1.5 w-full bg-base-200/60 border border-base-content/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-teal-500" />
+                            <label className="text-sm font-semibold block mt-4">Reason for Visit / Symptoms</label>
+                            <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Describe symptoms briefly (e.g. fever, cough, skin allergy)..." className="mt-1.5 w-full bg-base-200/60 border border-base-content/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-teal-500 resize-y" />
+                            {formError && <p className="text-xs text-red-500 mt-2">{formError}</p>}
+                            <div className="mt-5 flex gap-3">
+                                <button onClick={() => setStep(1)} className="btn flex-1 border-0 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-slate-100">← Back</button>
+                                <button onClick={confirmAppointment} className="btn flex-[2] border-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Confirm Appointment</button>
+                            </div>
+                        </>
+                    )}
                 </Modal>
             )}
 
             {/* ═════════ POPUP: Sample E-Prescription ═════════ */}
             {showRx && (
-                <Modal title="Sample E-Prescription Download" onClose={() => setShowRx(false)}>
+                <Modal title="Sample E-Prescription Download" onClose={() => setShowRx(false)} size="max-w-lg" plain>
                     <div className="bg-base-200/70 rounded-2xl p-4 text-sm">
                         <div className="flex justify-between gap-3"><p className="font-bold">Prescription ID: #RX-2026-9912</p><p className="font-bold text-emerald-600 text-xs sm:text-sm">Active / Unredeemed</p></div>
                         <p className="text-base-content/70 mt-3">1× Budesonide Nebuliser Suspension BP (0.5mg/2ml)</p>
@@ -307,7 +326,7 @@ const OnlineDoctor = () => {
 
             {/* ═════════ POPUP: Inpatient hospitals ═════════ */}
             {showClinics && (
-                <Modal title="Find Inpatient Hospitals & Local Clinics" onClose={() => setShowClinics(false)}>
+                <Modal title="Find Inpatient Hospitals & Local Clinics" onClose={() => setShowClinics(false)} size="max-w-2xl">
                     <div className="flex gap-3">
                         <input value={cityInput} onChange={(e) => setCityInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setClinicQuery(cityInput)} placeholder="Enter City or Zip Code (e.g., Berlin, 10115)..." className="flex-1 min-w-0 bg-base-200/70 border border-base-content/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-teal-500" />
                         <button onClick={() => setClinicQuery(cityInput)} className="btn border-0 bg-teal-600 hover:bg-teal-700 text-white rounded-xl gap-2"><FiSearch className="hidden sm:block" /> Search</button>
@@ -319,7 +338,7 @@ const OnlineDoctor = () => {
                                 <div className="min-w-0">
                                     <p className="font-bold text-sm">{h.name}</p>
                                     <p className="text-xs text-base-content/60">{h.address} • {h.distance}</p>
-                                    <span className="inline-block mt-2 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-md px-2 py-0.5">{h.tag}</span>
+                                    <span className="inline-block mt-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-md px-2 py-0.5">{h.tag}</span>
                                 </div>
                                 {/* Opens the real place in Google Maps */}
                                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`)}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline border-teal-600 text-teal-700 hover:bg-teal-600 hover:border-teal-600 hover:text-white rounded-lg">Directions</a>
