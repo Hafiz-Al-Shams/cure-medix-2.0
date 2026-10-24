@@ -1,6 +1,6 @@
 // 📁 PATH: src/layouts/Dashboard.jsx  (MODIFIED existing file – replace the whole file)
 import { useEffect, useState } from "react";
-import { FaHome, FaList, FaShoppingCart, FaUsers, FaFileInvoice, FaCapsules } from "react-icons/fa";
+import { FaHome, FaList, FaShoppingCart, FaUsers, FaFileInvoice, FaCapsules, FaAd } from "react-icons/fa";
 import { MdPayments, MdOutlineDarkMode, MdLightMode } from "react-icons/md";
 import { FiArrowLeft, FiMenu, FiX } from "react-icons/fi";
 import { NavLink, Link, Outlet } from "react-router-dom";
@@ -96,6 +96,7 @@ const Dashboard = () => {
                             <>
                                 <NavItem to="/dashboard/sellerHome" icon={<FaHome />} label="Seller Home" />
                                 <NavItem to="/dashboard/manage-medicines" icon={<FaCapsules />} label="Manage Medicines" />
+                                <NavItem to="/dashboard/requestBanner" icon={<FaAd />} label="Request Banner" /> {/* NEW */}
                             </>
                         )}
                         {!isAdmin && !isSeller && (

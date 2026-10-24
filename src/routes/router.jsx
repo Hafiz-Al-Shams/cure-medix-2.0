@@ -22,16 +22,11 @@ import AdminHome from "../pages/Dashboard/AdminHome";
 import ManagePayments from "../pages/Dashboard/ManagePayments";
 import SellerHome from "../pages/Dashboard/SellerHome";
 import ManageMedicines from "../pages/Dashboard/ManageMedicines";
-import HistoryPayments from "../pages/Dashboard/HistoryPayments";
-import BannerAd from "../pages/Dashboard/BannerAd";
-import Categories from "../pages/Categories/Categories";
-import Offer from "../pages/Offer/Offer";
 import OnlineDoctor from "../pages/OnlineDoctor/OnlineDoctor";
 // import UpdateProfile from "../pages/UpdateProfile/UpdateProfile";
-import SalesReport from "../pages/Dashboard/SalesReport";
-import ManageBannerAd from "../pages/Dashboard/ManageBannerAd";
 import InvoicePage from "../pages/InvoicePage";
 import Profile from "../pages/Profile/Profile";
+import RequestBanner from "../pages/Dashboard/RequestBanner";
 
 
 
@@ -49,14 +44,6 @@ const router = createBrowserRouter([
                 path: 'shop',
                 element: <Shop></Shop>,
                 // loader: () => fetch(`https://cure-medix-server.vercel.app/medicines`)
-            },
-            {
-                path: 'categories',
-                element: <Categories></Categories>,
-            },
-            {
-                path: 'offers',
-                element: <Offer></Offer>,
             },
             {
                 path: 'online-doctor',
@@ -111,14 +98,6 @@ const router = createBrowserRouter([
                 element: <AdminRoute><UpdateCategory></UpdateCategory></AdminRoute>,
                 loader: ({ params }) => fetch(`https://cure-medix-server.vercel.app/categories/${params.id}`)
             },
-            {
-                path: 'sales-report',
-                element: <AdminRoute><SalesReport></SalesReport></AdminRoute>,
-            },
-            {
-                path: 'manage-banner',
-                element: <AdminRoute><ManageBannerAd></ManageBannerAd></AdminRoute>,
-            },
 
             // user routes
             {
@@ -148,14 +127,9 @@ const router = createBrowserRouter([
                 element: <ManageMedicines></ManageMedicines>,
             },
             {
-                path: 'payments-history',
-                element: <HistoryPayments></HistoryPayments>,
+                path: 'requestBanner',
+                element: <RequestBanner></RequestBanner>,
             },
-            {
-                path: 'banner-ad',
-                element: <BannerAd></BannerAd>,
-            },
-
 
         ]
     },
