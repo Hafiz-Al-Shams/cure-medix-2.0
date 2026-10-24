@@ -1,3 +1,4 @@
+// 📁 PATH: src/pages/Home/Banner/Banner.jsx  (MODIFIED existing file – use your real Banner path; replace the whole file)
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiSearch, FiCheckCircle, FiThermometer, FiUserCheck } from "react-icons/fi";
@@ -38,16 +39,19 @@ const Banner = () => {
                         Access authentic pharmaceutical supplies, instant online doctor consultations, and doorstep express delivery with total peace of mind.
                     </p>
 
-                    {/* Search bar (functional) */}
-                    <form onSubmit={handleSearch} className="mt-6 flex items-center bg-white/10 border border-white/15 rounded-xl p-1.5 max-w-lg">
-                        <input
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search by Medicine Name, Brand, or Formula..."
-                            className="flex-1 bg-transparent outline-none px-3 text-sm placeholder:text-white/50"
-                        />
-                        <button type="submit" className="btn btn-sm md:btn-md border-0 bg-emerald-500 hover:bg-emerald-600 text-white gap-2">
-                            <FiSearch /> Find Medicines
+                    {/* Search bar (functional) – 📱 on phones the input and button stack (button full width); from `sm` up they sit in one row */}
+                    <form onSubmit={handleSearch} className="mt-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 bg-white/10 border border-white/15 rounded-xl p-1.5 w-full max-w-lg">
+                        <div className="flex items-center flex-1 min-w-0"> {/* min-w-0 stops long placeholder text from pushing the form wider than the screen */}
+                            <FiSearch className="ml-2.5 shrink-0 text-white/60 sm:hidden" /> {/* search icon only on phones, since the button text sits below */}
+                            <input
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Search by Medicine Name, Brand, or Formula..."
+                                className="flex-1 min-w-0 w-full bg-transparent outline-none px-3 py-2.5 sm:py-0 text-sm text-ellipsis placeholder:text-white/50"
+                            />
+                        </div>
+                        <button type="submit" className="btn btn-sm md:btn-md w-full sm:w-auto shrink-0 border-0 bg-emerald-500 hover:bg-emerald-600 text-white gap-2">
+                            <FiSearch className="hidden sm:inline" /> Find Medicines {/* icon moves to the input on phones */}
                         </button>
                     </form>
 
