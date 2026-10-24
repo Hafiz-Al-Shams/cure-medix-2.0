@@ -1,291 +1,162 @@
+// 📁 PATH: src/pages/Dashboard/AllUsers.jsx  (MODIFIED existing file – replace the whole file)
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { FaTrashAlt } from "react-icons/fa";
+import { FiSearch } from "react-icons/fi";
+import { Helmet } from "react-helmet-async";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
-import { FaTrashAlt, FaUsers } from "react-icons/fa";
-import Swal from "sweetalert2";
-// import useAuth from "../../hooks/useAuth";
+import AdminPageHeader from "../../components/AdminPageHeader";
+import { confirmAction, successAlert, errorAlert } from "../../utils/adminAlerts";
 
+const roleTone = { admin: "green", seller: "purple", user: "slate" };
 
+// Role badge: User / Seller / Admin
+const RoleBadge = ({ role }) => {
+    const r = role || "user";
+    return <span className={`cm-chip cm-tone-${roleTone[r] || "slate"}`}>{r.charAt(0).toUpperCase() + r.slice(1)}</span>;
+};
+
+// The two role buttons that fit the user's current role (same rules as before)
+const RoleButtons = ({ user, onSeller, onAdmin, onUser }) => {
+    const seller = <button key="s" onClick={() => onSeller(user)} className="cm-chip cm-chip-btn cm-tone-amber">Make Seller</button>;
+    const admin = <button key="a" onClick={() => onAdmin(user)} className="cm-chip cm-chip-btn cm-tone-green">Make Admin</button>;
+    const plain = <button key="u" onClick={() => onUser(user)} className="cm-chip cm-chip-btn cm-tone-slate">Make User</button>;
+    if (user.role === "admin") return <>{seller}{plain}</>;
+    if (user.role === "seller") return <>{admin}{plain}</>;
+    return <>{seller}{admin}</>;
+};
 
 const AllUsers = () => {
-    // const { user } = useAuth();
     const axiosSecure = useAxiosSecure();
+    const [search, setSearch] = useState("");
+
     const { data: users = [], refetch } = useQuery({
-        queryKey: ['users'],
-        queryFn: async () => {
-            const res = await axiosSecure.get('/users');
-            return res.data;
-        }
-    })
+        queryKey: ["users"],
+        queryFn: async () => (await axiosSecure.get("/users")).data,
+    });
 
-    const handleMakeAdmin = user => {
-        axiosSecure.patch(`/users/admin/${user._id}`)
-            .then(res => {
-                // console.log(res.data);
-                if (res.data.modifiedCount > 0) {
-                    refetch();
-                    Swal.fire({
-                        position: "center",
-                        icon: "success",
-                        title: `You made ${user.name} an Admin!`,
-                        showConfirmButton: false,
-                        timer: 1000
-                    });
-                }
-            })
-    }
-
-    const handleMakeUser = user => {
-        axiosSecure.patch(`/users/makeUser/${user._id}`)
-            .then(res => {
-                // console.log(res.data);
-                if (res.data.modifiedCount > 0) {
-                    refetch();
-                    Swal.fire({
-                        position: "center",
-                        icon: "success",
-                        title: `You've downgraded ${user.name} into user!!!`,
-                        showConfirmButton: false,
-                        timer: 1000
-                    });
-                }
-            })
-    }
-
-    const handleMakeSeller = user => {
-        axiosSecure.patch(`/users/makeSeller/${user._id}`)
-            .then(res => {
-                // console.log(res.data);
-                if (res.data.modifiedCount > 0) {
-                    refetch();
-                    Swal.fire({
-                        position: "center",
-                        icon: "success",
-                        title: `You made ${user.name} a Seller!`,
-                        showConfirmButton: false,
-                        timer: 1000
-                    });
-                }
-            })
-    }
-
-    const handleDeleteUser = user => {
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-
-                axiosSecure.delete(`/users/${user._id}`)
-                    .then(res => {
-                        if (res.data.deletedCount > 0) {
-                            refetch();
-                            Swal.fire({
-                                title: "Deleted!",
-                                // text: "user has been deleted.",
-                                icon: "success"
-                            });
-                        }
-                    })
+    // Same 3 role endpoints as before, now with success / error modals
+    const changeRole = async (endpoint, message) => {
+        try {
+            const res = await axiosSecure.patch(endpoint);
+            if (res.data.modifiedCount > 0) {
+                refetch();
+                successAlert("Role updated", message);
             }
+        } catch (err) {
+            console.error(err);
+            errorAlert("Could not update role", "Please try again in a moment.");
+        }
+    };
+    const handleMakeAdmin = (user) => changeRole(`/users/admin/${user._id}`, `You made ${user.name} an Admin!`);
+    const handleMakeUser = (user) => changeRole(`/users/makeUser/${user._id}`, `You've downgraded ${user.name} to User.`);
+    const handleMakeSeller = (user) => changeRole(`/users/makeSeller/${user._id}`, `You made ${user.name} a Seller!`);
+
+    // Confirm → delete → success modal
+    const handleDeleteUser = async (user) => {
+        const ok = await confirmAction({
+            title: "Delete this user?",
+            text: `${user.name} will be removed permanently. You won't be able to revert this.`,
+            confirmText: "Yes, delete user",
+            danger: true,
         });
-    }
+        if (!ok) return;
+        try {
+            const res = await axiosSecure.delete(`/users/${user._id}`);
+            if (res.data.deletedCount > 0) {
+                refetch();
+                successAlert("User deleted", `${user.name} has been removed.`);
+            }
+        } catch (err) {
+            console.error(err);
+            errorAlert("Could not delete user", "Please try again in a moment.");
+        }
+    };
+
+    // Client-side search by name, email or role
+    const q = search.trim().toLowerCase();
+    const filtered = q
+        ? users.filter((u) => [u.name, u.email, u.role || "user"].some((v) => String(v || "").toLowerCase().includes(q)))
+        : users;
+
+    const trashBtn = (user) => (
+        <button onClick={() => handleDeleteUser(user)} aria-label={`Delete ${user.name}`} className="rounded-lg p-2 text-base-content/40 transition-colors hover:bg-rose-500/10 hover:text-rose-500"><FaTrashAlt /></button>
+    );
 
     return (
         <div>
-            <style>{`
-            .users-table-wrap {
-                border-radius: 12px;
-                overflow: hidden;
-                border: 0.5px solid rgba(0,0,0,0.08);
-            }
-            .dark .users-table-wrap {
-                border-color: rgba(255,255,255,0.08);
-            }
-            .users-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 14px;
-            }
-            .users-table thead tr {
-                background: #57CEA7;
-            }
-            .users-table thead th {
-                padding: 13px 16px;
-                text-align: left;
-                font-size: 11px;
-                font-weight: 500;
-                letter-spacing: 0.07em;
-                text-transform: uppercase;
-                color: #085041;
-                border: none;
-            }
-            .users-table tbody tr {
-                border-bottom: 0.5px solid rgba(0,0,0,0.06);
-                transition: background 0.15s ease;
-            }
-            .dark .users-table tbody tr {
-                border-color: rgba(255,255,255,0.06);
-            }
-            .users-table tbody tr:last-child {
-                border-bottom: none;
-            }
-            .users-table tbody tr:hover {
-                background: #e6f9f3;
-            }
-            .dark .users-table tbody tr:hover {
-                background: rgba(87,206,167,0.07);
-            }
-            .users-table td, .users-table th {
-                padding: 12px 16px;
-                vertical-align: middle;
-            }
-            .role-badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 5px;
-                font-size: 11px;
-                font-weight: 500;
-                padding: 3px 10px;
-                border-radius: 20px;
-                letter-spacing: 0.04em;
-            }
-            .role-admin  { background: #e6f9f3; color: #0f6e56; }
-            .role-seller { background: #EEEDFE; color: #3C3489; }
-            .role-user   { background: #E6F1FB; color: #185FA5; }
-            .action-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-                font-size: 11px;
-                font-weight: 500;
-                padding: 4px 10px;
-                border-radius: 6px;
-                border: 0.5px solid transparent;
-                cursor: pointer;
-                transition: opacity 0.15s, transform 0.1s;
-                margin: 2px 3px;
-                white-space: nowrap;
-            }
-            .action-btn:hover  { opacity: 0.85; }
-            .action-btn:active { transform: scale(0.97); }
-            .btn-make-seller { background: #FAEEDA; color: #633806; border-color: #FAC775; }
-            .btn-make-admin  { background: #e6f9f3; color: #0f6e56; border-color: #9FE1CB; }
-            .btn-make-user   { background: #E6F1FB; color: #185FA5; border-color: #B5D4F4; }
-            .btn-delete      { background: #FCEBEB; color: #A32D2D; border-color: #F7C1C1; padding: 5px 10px; }
-            .idx-cell        { color: #9ca3af; font-size: 12px; width: 40px; }
-            .email-cell      { color: #6b7280; font-size: 13px; }
-        `}</style>
+            <Helmet><title>CureMedix | All Users</title></Helmet>
+            <AdminPageHeader title="Manage All Users" subtitle="View user roster, assign seller or admin privileges, and manage accounts." />
 
-            {/* Header bar */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: '#57CEA7',
-                borderRadius: '12px 12px 0 0',
-                padding: '14px 20px',
-                marginBottom: '0',
-            }}>
-                <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#085041', margin: 0 }}>
-                    All Users
-                </h2>
-                <span style={{
-                    background: '#085041',
-                    color: '#9FE1CB',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    padding: '4px 14px',
-                    borderRadius: '20px',
-                    letterSpacing: '0.05em',
-                }}>
-                    {users.length} total
-                </span>
+            {/* Toolbar: total + search */}
+            <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-base-content/10 bg-base-100 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
+                    <span className="cm-chip cm-tone-green border border-emerald-500/30 !px-3 !py-1 text-xs">{users.length} Total Users</span>
+                    <span className="text-xs text-base-content/60">
+                        {q ? `Showing ${filtered.length} result${filtered.length === 1 ? "" : "s"}` : "Manage user authorization & roles"}
+                    </span>
+                </div>
+                <label className="flex w-full items-center gap-2 rounded-xl border border-base-content/15 px-3 py-2 sm:w-72">
+                    <FiSearch className="text-base-content/50" />
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search user or email..." className="grow bg-transparent text-sm outline-none" />
+                </label>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto users-table-wrap" style={{ borderRadius: '0 0 12px 12px' }}>
-                <table className="users-table">
-                    <thead>
-                        <tr>
-                            <th className="idx-cell">#</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Actions</th>
-                            <th>Delete</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((user, index) => (
-                            <tr key={user._id}>
-                                <td className="idx-cell">{index + 1}</td>
+            {filtered.length === 0 && (
+                <p className="rounded-2xl border border-dashed border-base-content/20 py-12 text-center text-sm text-base-content/60">No users match “{search}”.</p>
+            )}
 
-                                <td style={{ fontWeight: '500' }}>{user.name}</td>
+            {/* Desktop / tablet table */}
+            {filtered.length > 0 && (
+                <div className="hidden overflow-hidden rounded-2xl border border-base-content/10 bg-base-100 shadow-sm md:block">
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[720px] text-sm">
+                            <thead>
+                                <tr className="bg-teal-600 text-left text-xs font-bold uppercase tracking-wider text-white">
+                                    <th className="w-14 px-4 py-3">#</th>
+                                    <th className="px-4 py-3">User Details</th>
+                                    <th className="px-4 py-3">Role</th>
+                                    <th className="px-4 py-3">Role Management</th>
+                                    <th className="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-base-content/10">
+                                {filtered.map((user, i) => (
+                                    <tr key={user._id} className="transition-colors hover:bg-base-200/60">
+                                        <td className="px-4 py-3 text-xs text-base-content/50">{i + 1}</td>
+                                        <td className="px-4 py-3">
+                                            <p className="font-semibold text-base-content">{user.name}</p>
+                                            <p className="text-xs text-base-content/60">{user.email}</p>
+                                        </td>
+                                        <td className="px-4 py-3"><RoleBadge role={user.role} /></td>
+                                        <td className="px-4 py-3"><div className="flex flex-wrap gap-2"><RoleButtons user={user} onSeller={handleMakeSeller} onAdmin={handleMakeAdmin} onUser={handleMakeUser} /></div></td>
+                                        <td className="px-4 py-3 text-right">{trashBtn(user)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
-                                <td className="email-cell">{user.email}</td>
-
-                                {/* Role badge */}
-                                <td>
-                                    {user.role === 'admin' && (
-                                        <span className="role-badge role-admin">● Admin</span>
-                                    )}
-                                    {user.role === 'seller' && (
-                                        <span className="role-badge role-seller">● Seller</span>
-                                    )}
-                                    {user.role === 'user' && (
-                                        <span className="role-badge role-user">● User</span>
-                                    )}
-                                </td>
-
-                                {/* Action buttons */}
-                                <td>
-                                    {user.role === 'admin' && (
-                                        <>
-                                            <button onClick={() => handleMakeSeller(user)} className="action-btn btn-make-seller">
-                                                Make Seller
-                                            </button>
-                                            <button onClick={() => handleMakeUser(user)} className="action-btn btn-make-user">
-                                                Make User
-                                            </button>
-                                        </>
-                                    )}
-                                    {user.role === 'seller' && (
-                                        <>
-                                            <button onClick={() => handleMakeUser(user)} className="action-btn btn-make-user">
-                                                Make User
-                                            </button>
-                                            <button onClick={() => handleMakeAdmin(user)} className="action-btn btn-make-admin">
-                                                Make Admin
-                                            </button>
-                                        </>
-                                    )}
-                                    {user.role === 'user' && (
-                                        <>
-                                            <button onClick={() => handleMakeSeller(user)} className="action-btn btn-make-seller">
-                                                Make Seller
-                                            </button>
-                                            <button onClick={() => handleMakeAdmin(user)} className="action-btn btn-make-admin">
-                                                Make Admin
-                                            </button>
-                                        </>
-                                    )}
-                                </td>
-
-                                {/* Delete */}
-                                <td>
-                                    <button onClick={() => handleDeleteUser(user)} className="action-btn btn-delete">
-                                        <FaTrashAlt style={{ fontSize: '11px' }} /> Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            {/* Phone cards */}
+            <div className="space-y-3 md:hidden">
+                {filtered.map((user, i) => (
+                    <div key={user._id} className="rounded-2xl border border-base-content/10 bg-base-100 p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="text-[11px] text-base-content/40">#{i + 1}</p>
+                                <p className="truncate font-semibold text-base-content">{user.name}</p>
+                                <p className="truncate text-xs text-base-content/60">{user.email}</p>
+                            </div>
+                            <RoleBadge role={user.role} />
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-base-content/10 pt-3">
+                            <RoleButtons user={user} onSeller={handleMakeSeller} onAdmin={handleMakeAdmin} onUser={handleMakeUser} />
+                            <span className="ml-auto">{trashBtn(user)}</span>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

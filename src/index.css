@@ -22,47 +22,234 @@ body {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   NEW: dark-mode styling for ALL SweetAlert2 popups site-wide
-   (login/sign-up alerts, shop "not logged in", logout, etc.)
-   Light mode is untouched: these rules only apply when your
-   navbar toggle sets data-theme="dark" on <html>.
+   Dark-mode styling for ALL SweetAlert2 popups site-wide
+   (unchanged from before – still used by login/shop/logout alerts)
    ───────────────────────────────────────────────────────────── */
-
-/* Popup box: same dark slate as the sign-in / sign-up card */
 [data-theme="dark"] .swal2-popup {
   background: #0f172a;
   color: #cbd5e1;
   border: 1px solid #334155;
 }
 
-/* Title + message text */
 [data-theme="dark"] .swal2-title {
   color: #f1f5f9;
 }
+
 [data-theme="dark"] .swal2-html-container {
   color: #cbd5e1;
 }
 
-/* Success icon: its white "cut-out" pieces must match the dark popup, otherwise white patches show */
 [data-theme="dark"] .swal2-success [class^="swal2-success-circular-line"],
 [data-theme="dark"] .swal2-success .swal2-success-fix {
   background: #0f172a !important;
 }
 
-/* Cancel button (e.g. shop "You are not Logged In"): dark outlined look */
 [data-theme="dark"] .swal2-cancel {
   background: #1e293b;
   color: #e2e8f0;
   border: 1px solid #475569;
 }
+
 [data-theme="dark"] .swal2-cancel:hover {
   background: #334155;
 }
 
-/* Close (X) button and timer progress bar */
 [data-theme="dark"] .swal2-close {
   color: #94a3b8;
 }
+
 [data-theme="dark"] .swal2-timer-progress-bar {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   NEW: admin dashboard modals (confirm / success / error)
+   Used through src/utils/adminAlerts.js – light + dark adaptive
+   ───────────────────────────────────────────────────────────── */
+.cm-swal-popup {
+  border-radius: 1.25rem !important;
+  padding: 1.75rem 1.5rem 1.5rem !important;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+}
+
+.cm-swal-title {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+}
+
+.cm-swal-text {
+  font-size: 0.9rem !important;
+  color: #64748b !important;
+}
+
+.cm-swal-actions {
+  gap: 0.75rem !important;
+  margin-top: 1.25rem !important;
+}
+
+.cm-swal-confirm,
+.cm-swal-cancel {
+  border-radius: 0.75rem !important;
+  padding: 0.6rem 1.4rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  transition: background 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+
+.cm-swal-confirm {
+  background: #0d9488 !important;
+  color: #fff !important;
+  border: 1px solid #0d9488 !important;
+}
+
+.cm-swal-confirm:hover {
+  background: #0f766e !important;
+}
+
+.cm-swal-confirm.cm-swal-danger {
+  background: #e11d48 !important;
+  border-color: #e11d48 !important;
+}
+
+.cm-swal-confirm.cm-swal-danger:hover {
+  background: #be123c !important;
+}
+
+.cm-swal-cancel {
+  background: #fff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.cm-swal-cancel:hover {
+  background: #f1f5f9 !important;
+}
+
+.cm-swal-confirm:focus,
+.cm-swal-cancel:focus {
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.35) !important;
+}
+
+.cm-swal-popup .swal2-timer-progress-bar {
+  background: rgba(13, 148, 136, 0.5);
+}
+
+[data-theme="dark"] .cm-swal-popup {
+  background: #0f172a;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .cm-swal-title {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .cm-swal-text {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .cm-swal-cancel {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .cm-swal-cancel:hover {
+  background: #334155 !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   NEW: small colour "tones" + chip shape used across admin pages
+   (role badges, status pills, role buttons, stat icons)
+   ───────────────────────────────────────────────────────────── */
+.cm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 9999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.cm-chip-btn {
+  cursor: pointer;
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.65rem;
+  transition: filter 0.15s;
+}
+
+.cm-chip-btn:hover {
+  filter: brightness(0.94);
+}
+
+[data-theme="dark"] .cm-chip-btn:hover {
+  filter: brightness(1.25);
+}
+
+.cm-tone-green {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.cm-tone-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.cm-tone-amber {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.cm-tone-purple {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.cm-tone-red {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+.cm-tone-slate {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+[data-theme="dark"] .cm-tone-green {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .cm-tone-blue {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .cm-tone-amber {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+}
+
+[data-theme="dark"] .cm-tone-purple {
+  background: rgba(139, 92, 246, 0.22);
+  color: #c4b5fd;
+}
+
+[data-theme="dark"] .cm-tone-red {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fda4af;
+}
+
+[data-theme="dark"] .cm-tone-slate {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
 }
