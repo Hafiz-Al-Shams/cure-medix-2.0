@@ -1,21 +1,17 @@
-// 📁 PATH: src/pages/CategoryDetails/DetailsCard.jsx  (replace the whole file)
+// 📁 PATH: src/pages/CategoryDetails/DetailsCard.jsx  (MODIFIED existing file – replace the whole file)
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
     FaBottleDroplet,
-    FaBox,
     FaCapsules,
-    FaCartShopping,
     FaHouse,
     FaLungs,
-    FaMinus,
-    FaPlus,
     FaSyringe,
     FaTablets,
-    FaXmark,
 } from "react-icons/fa6";
+import { FiPlus, FiMinus, FiX, FiShoppingCart, FiPackage } from "react-icons/fi"; // same icons the Shop page cards/popup use
 import Swal from "sweetalert2";
 import useAuth from "../../hooks/useAuth";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
@@ -53,10 +49,11 @@ const swalClass = {
 };
 
 /* ----------------------------------------------------------------
-   Theme tokens
+   Theme tokens for the PAGE parts (header, breadcrumb, pills, empty state)
    Light = default classes. Dark = the `[[data-theme=dark]_&]:` variant,
    which fires when <html data-theme="dark"> (your navbar toggle).
-   No Tailwind config change is needed for this variant.
+   NOTE: the medicine cards + details popup no longer use these tokens –
+   they now use the exact same classes as the Shop page.
 ----------------------------------------------------------------- */
 const t = {
     page: "bg-slate-50 [[data-theme=dark]_&]:bg-slate-950",
@@ -82,68 +79,34 @@ const t = {
     pillActive:
         "border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25 [[data-theme=dark]_&]:shadow-emerald-900/40",
 
-    card:
-        "border-gray-200 bg-white hover:shadow-xl hover:shadow-slate-200/70 [[data-theme=dark]_&]:border-slate-800 [[data-theme=dark]_&]:bg-slate-900 [[data-theme=dark]_&]:hover:border-slate-700 [[data-theme=dark]_&]:hover:shadow-black/40",
-    imgBox: "bg-gray-100 [[data-theme=dark]_&]:bg-slate-800",
-    typeLabel: "text-emerald-700 [[data-theme=dark]_&]:text-emerald-400",
     strong: "text-slate-900 [[data-theme=dark]_&]:text-slate-50",
-    body: "text-slate-700 [[data-theme=dark]_&]:text-slate-300",
-    faint: "text-gray-400 [[data-theme=dark]_&]:text-slate-500",
-
-    btnOutline:
-        "border-gray-200 bg-white text-slate-800 hover:bg-gray-50 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:bg-transparent [[data-theme=dark]_&]:text-slate-200 [[data-theme=dark]_&]:hover:bg-slate-800",
-    btnPrimary: "bg-teal-600 text-white hover:bg-teal-700 [[data-theme=dark]_&]:hover:bg-teal-500",
-
     skeleton: "bg-gray-100 [[data-theme=dark]_&]:bg-slate-800",
     empty:
         "border-gray-300 bg-white [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:bg-slate-900",
-
-    /* modal */
-    overlay: "bg-slate-900/50 [[data-theme=dark]_&]:bg-black/70",
-    modal:
-        "bg-white [[data-theme=dark]_&]:border [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:bg-slate-900",
-    close: "text-gray-400 hover:text-gray-700 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:hover:text-slate-100",
-    modalName: "text-slate-900 [[data-theme=dark]_&]:text-slate-50",
-    typeChip:
-        "bg-emerald-50 text-emerald-700 [[data-theme=dark]_&]:bg-emerald-500/10 [[data-theme=dark]_&]:text-emerald-300",
-    priceBox: "bg-gray-100/80 [[data-theme=dark]_&]:bg-slate-800",
-    priceText: "text-teal-600 [[data-theme=dark]_&]:text-teal-400",
-    discountText: "text-red-500 [[data-theme=dark]_&]:text-red-400",
-    infoLabel: "text-gray-500 [[data-theme=dark]_&]:text-slate-400",
-    infoValue: "text-gray-900 [[data-theme=dark]_&]:text-slate-100",
-    guideTitle: "text-slate-800 [[data-theme=dark]_&]:text-slate-100",
-    guideText: "text-slate-600 [[data-theme=dark]_&]:text-slate-400",
-    divider: "border-gray-200 [[data-theme=dark]_&]:border-slate-700",
-    stepper: "bg-gray-100 [[data-theme=dark]_&]:bg-slate-800",
-    stepBtn:
-        "text-slate-700 hover:bg-gray-200 [[data-theme=dark]_&]:text-slate-200 [[data-theme=dark]_&]:hover:bg-slate-700",
-    stepInput:
-        "bg-white text-slate-900 [[data-theme=dark]_&]:bg-slate-900 [[data-theme=dark]_&]:text-slate-50",
 };
 
 /* ----------------------------------------------------------------
-   Small pieces
+   Loading placeholder – same shape as the new (Shop-style) card
 ----------------------------------------------------------------- */
 const SkeletonCard = () => (
-    <div className={`animate-pulse rounded-3xl border p-4 ${t.card}`}>
-        <div className={`h-48 rounded-2xl sm:h-[206px] ${t.skeleton}`} />
-        <div className={`mt-5 h-3 w-24 rounded ${t.skeleton}`} />
+    <div className="animate-pulse rounded-2xl border border-base-content/10 bg-base-100 p-4 shadow-sm">
+        <div className={`h-52 rounded-xl ${t.skeleton}`} />
+        <div className={`mt-4 h-3 w-24 rounded ${t.skeleton}`} />
         <div className={`mt-3 h-5 w-40 rounded ${t.skeleton}`} />
         <div className={`mt-3 h-3 w-full rounded ${t.skeleton}`} />
         <div className={`mt-2 h-3 w-2/3 rounded ${t.skeleton}`} />
-        <div className="mt-5 flex gap-2">
-            <div className={`h-9 flex-1 rounded-lg ${t.skeleton}`} />
-            <div className={`h-9 flex-1 rounded-lg ${t.skeleton}`} />
+        <div className="mt-5 grid grid-cols-2 gap-2">
+            <div className={`h-8 rounded-lg ${t.skeleton}`} />
+            <div className={`h-8 rounded-lg ${t.skeleton}`} />
         </div>
     </div>
 );
 
-const InfoItem = ({ label, value }) => (
-    <div className="min-w-0">
-        <p className={`text-sm ${t.infoLabel}`}>{label}</p>
-        <p className={`mt-0.5 break-words text-sm font-semibold ${t.infoValue}`}>{value}</p>
-    </div>
-);
+/* ----------------------------------------------------------------
+   Small display helpers (copied from the Shop page)
+----------------------------------------------------------------- */
+const money = (n) => `${Number(n).toFixed(1)}$`; // 3 -> "3.0$"
+const hideBrokenImg = (e) => { e.currentTarget.style.display = "none"; }; // hides the broken image icon
 
 /* ----------------------------------------------------------------
    Page
@@ -153,8 +116,8 @@ const DetailsCard = () => {
 
     const [medicines, setMedicines] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selected, setSelected] = useState(null); // medicine shown in the modal
-    const [quantity, setQuantity] = useState(1);
+    const [selected, setSelected] = useState(null); // medicine shown in the details popup
+    const [qty, setQty] = useState(1); // quantity inside the popup (same as Shop)
 
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -167,7 +130,7 @@ const DetailsCard = () => {
     const HeaderIcon = activeCategory?.icon || FaTablets;
     const headerDesc = `Browse all high-grade ${String(categoryName).toLowerCase()} formulations with verified laboratory certifications and discounted pricing.`;
 
-    /* ---------- data ---------- */
+    /* ---------- data (unchanged) ---------- */
     useEffect(() => {
         setLoading(true);
         axios
@@ -184,13 +147,14 @@ const DetailsCard = () => {
             .finally(() => setLoading(false));
     }, [categoryName]);
 
-    /* ---------- modal helpers ---------- */
+    /* ---------- popup helpers ---------- */
     const openDetails = (medicine) => {
-        setQuantity(1);
+        setQty(1); // always start from 1
         setSelected(medicine);
     };
     const closeDetails = () => setSelected(null);
 
+    // Esc closes the popup + page stops scrolling behind it (kept from your original)
     useEffect(() => {
         if (!selected) return;
         const onKey = (e) => e.key === "Escape" && setSelected(null);
@@ -203,15 +167,8 @@ const DetailsCard = () => {
         };
     }, [selected]);
 
-    const maxQty = selected ? Math.max(Number(selected.stock) || 1, 1) : 1;
-    const changeQty = (value) => {
-        const n = Number(value);
-        if (Number.isNaN(n)) return;
-        setQuantity(Math.min(Math.max(n, 1), maxQty));
-    };
-
-    /* ---------- cart ---------- */
-    const handleAddToCart = (medicine, qty = 1) => {
+    /* ---------- cart (logic unchanged) ---------- */
+    const handleAddToCart = (medicine, quantity = 1) => {
         const { name, image, price, _id, type, description, seller, company } = medicine;
         if (user && user.email) {
             const cartItem = {
@@ -224,7 +181,7 @@ const DetailsCard = () => {
                 description,
                 seller,
                 company,
-                quantity: qty,
+                quantity,
             };
             axiosSecure.post("/carts", cartItem).then((res) => {
                 if (res.data.insertedId) {
@@ -283,7 +240,7 @@ const DetailsCard = () => {
                         <span className={`font-semibold ${t.crumbNow}`}>{categoryName}</span>
                     </nav>
 
-                    {/* ================= Heading card ================= */}
+                    {/* ================= Heading card (unchanged) ================= */}
                     <header
                         className={`relative overflow-hidden rounded-3xl border px-5 py-6 sm:rounded-[28px] sm:px-8 sm:py-7 ${t.headCard}`}
                     >
@@ -322,9 +279,8 @@ const DetailsCard = () => {
                                             key={name}
                                             to={`${CATEGORY_ROUTE}/${name}`}
                                             aria-current={isActive ? "page" : undefined}
-                                            className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-bold transition-colors sm:px-4 ${
-                                                isActive ? t.pillActive : t.pill
-                                            }`}
+                                            className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-bold transition-colors sm:px-4 ${isActive ? t.pillActive : t.pill
+                                                }`}
                                         >
                                             <Icon className="text-[13px]" />
                                             {name}
@@ -335,81 +291,32 @@ const DetailsCard = () => {
                         </div>
                     </header>
 
-                    {/* ================= Cards ================= */}
-                    <section className="mt-6 grid grid-cols-1 gap-4 sm:mt-8 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+                    {/* ================= Cards – EXACT same card + grid as the Shop page ================= */}
+                    <section className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                         {loading && Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
 
                         {!loading &&
-                            medicines.map((medicine, index) => {
-                                const discount = Number(medicine.discountPercentage) || 0;
-                                return (
-                                    <article
-                                        key={medicine._id || index}
-                                        className={`flex min-w-0 flex-col rounded-3xl border p-4 transition-shadow duration-200 ${t.card}`}
-                                    >
-                                        {/* image */}
-                                        <div
-                                            className={`relative flex h-48 items-center justify-center overflow-hidden rounded-2xl sm:h-[206px] ${t.imgBox}`}
-                                        >
-                                            {discount > 0 && (
-                                                <span className="absolute left-3 top-3 z-10 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
-                                                    {discount}% Discount Price
-                                                </span>
-                                            )}
-                                            {medicine.image && (
-                                                <img
-                                                    src={medicine.image}
-                                                    alt={medicine.name}
-                                                    loading="lazy"
-                                                    onError={(e) => (e.currentTarget.style.visibility = "hidden")}
-                                                    className="h-full w-full object-contain"
-                                                />
-                                            )}
-                                        </div>
-
-                                        {/* info */}
-                                        <div className="mt-5 flex flex-1 flex-col">
-                                            <p className={`text-[11px] font-bold uppercase tracking-wide ${t.typeLabel}`}>
-                                                {medicine.type}
-                                            </p>
-                                            <h2 className={`mt-1 break-words text-lg font-bold leading-snug ${t.strong}`}>
-                                                {medicine.name}
-                                            </h2>
-
-                                            <div className={`mt-1.5 space-y-0.5 text-[13px] ${t.body}`}>
-                                                <p>
-                                                    <span className="font-semibold">Per unit:</span>{" "}
-                                                    <span className={`font-bold ${t.strong}`}>{medicine.price}$</span>{" "}
-                                                    <span className={t.faint}>({discount}% discount price)</span>
-                                                </p>
-                                                <p>Stock: {medicine.stock} boxes available today</p>
-                                                <p className={t.faint}>Type: {medicine.type}</p>
-                                            </div>
-
-                                            <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openDetails(medicine)}
-                                                    className={`rounded-lg border py-2 text-sm font-semibold transition-colors ${t.btnOutline}`}
-                                                >
-                                                    Details
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleAddToCart(medicine)}
-                                                    className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold transition-colors ${t.btnPrimary}`}
-                                                >
-                                                    <FaPlus className="text-[11px]" />
-                                                    Select
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </article>
-                                );
-                            })}
+                            medicines.map((med, i) => (
+                                <div key={med._id || i} className="bg-base-100 border border-base-content/10 rounded-2xl p-4 shadow-sm hover:shadow-lg transition-shadow flex flex-col">
+                                    <div className="relative h-52 rounded-xl bg-base-200 flex items-center justify-center overflow-hidden">
+                                        {/* red discount badge only when the medicine is discounted (same rule as Shop) */}
+                                        {med.discount && <span className="absolute left-3 top-3 z-[1] text-[9px] font-bold bg-red-600 text-white rounded-full px-2 py-0.5 uppercase">{med.discountPercentage} discount price</span>}
+                                        <img src={med.image} alt={med.name} onError={hideBrokenImg} className="max-h-full max-w-full object-contain p-3" />
+                                    </div>
+                                    <p className="mt-4 text-[10px] font-bold tracking-wider text-teal-600 uppercase">{med.type}</p>
+                                    <h2 className="font-bold text-base-content">{med.name}</h2>
+                                    <p className="text-xs text-base-content/80 mt-1"><span className="font-semibold">Per unit: {money(med.price)}</span> <span className="text-base-content/50">({med.discountPercentage ?? "0%"} discount price)</span></p>
+                                    <p className="text-xs text-base-content/80">Stock: {med.stock} boxes available today</p>
+                                    <p className="text-xs text-base-content/50">Type: {med.type}</p>
+                                    <div className="mt-auto pt-4 grid grid-cols-2 gap-2">
+                                        <button onClick={() => openDetails(med)} className="btn btn-sm btn-outline border-base-content/15 font-medium">Details</button>
+                                        <button onClick={() => handleAddToCart(med, 1)} className="btn btn-sm border-0 bg-teal-600 hover:bg-teal-700 text-white gap-1"><FiPlus /> Select</button>
+                                    </div>
+                                </div>
+                            ))}
                     </section>
 
-                    {/* empty state */}
+                    {/* empty state (unchanged) */}
                     {!loading && medicines.length === 0 && (
                         <div className={`mt-8 rounded-3xl border border-dashed px-4 py-16 text-center sm:py-20 ${t.empty}`}>
                             <p className={`text-lg font-bold ${t.strong}`}>No medicines found</p>
@@ -421,147 +328,67 @@ const DetailsCard = () => {
                 </div>
             </div>
 
-            {/* ================= Details modal ================= */}
-            {selected &&
-                (() => {
-                    const discount = Number(selected.discountPercentage) || 0;
-                    return (
-                        <div
-                            className={`fixed inset-0 z-[100] flex items-end justify-center p-0 backdrop-blur-[2px] sm:items-center sm:p-4 ${t.overlay}`}
-                            onClick={closeDetails}
-                        >
-                            <div
-                                role="dialog"
-                                aria-modal="true"
-                                aria-label={`${selected.name} details`}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`relative max-h-[92vh] max-h-[92dvh] w-full max-w-[510px] overflow-y-auto rounded-t-[28px] p-5 shadow-2xl sm:rounded-[32px] sm:p-7 ${t.modal}`}
-                            >
-                                <button
-                                    type="button"
-                                    onClick={closeDetails}
-                                    aria-label="Close"
-                                    className={`absolute right-5 top-5 transition-colors sm:right-6 sm:top-6 ${t.close}`}
-                                >
-                                    <FaXmark className="text-xl" />
-                                </button>
+            {/* ================= Details popup – EXACT same design as the Shop page popup ================= */}
+            {selected && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={closeDetails}> {/* click backdrop to close */}
+                    <div className="relative bg-base-100 rounded-3xl shadow-2xl w-full max-w-lg p-6 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={closeDetails} aria-label="Close" className="absolute right-5 top-5 text-base-content/50 hover:text-base-content text-xl"><FiX /></button>
 
-                                {/* header */}
-                                <div className="flex items-center gap-3.5 pr-8 sm:gap-4">
-                                    <div
-                                        className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-20 sm:w-20 ${t.imgBox}`}
-                                    >
-                                        {selected.image && (
-                                            <img
-                                                src={selected.image}
-                                                alt={selected.name}
-                                                onError={(e) => (e.currentTarget.style.visibility = "hidden")}
-                                                className="h-full w-full object-contain"
-                                            />
-                                        )}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span
-                                            className={`inline-block rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${t.typeChip}`}
-                                        >
-                                            {selected.type}
-                                        </span>
-                                        <h3
-                                            className={`mt-1 break-words text-xl font-extrabold leading-tight sm:text-2xl ${t.modalName}`}
-                                        >
-                                            {selected.name}
-                                        </h3>
-                                        <p className={`mt-0.5 flex items-center gap-1.5 text-sm ${t.infoLabel}`}>
-                                            <FaBox className={`text-xs ${t.priceText}`} />
-                                            {selected.stock} boxes available today
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* pricing */}
-                                <div className={`mt-5 rounded-2xl p-4 sm:p-5 ${t.priceBox}`}>
-                                    <p className={`text-[15px] font-semibold ${t.guideTitle}`}>Pricing Breakdown:</p>
-                                    <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
-                                        <span className={`text-3xl font-extrabold ${t.priceText}`}>{selected.price}$</span>
-                                        <span className={`text-sm font-medium ${t.discountText}`}>
-                                            ({discount}% discount price)
-                                        </span>
-                                    </p>
-                                </div>
-
-                                {/* info grid */}
-                                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 sm:gap-x-6">
-                                    <InfoItem label="Category" value={selected.category || "N/A"} />
-                                    <InfoItem label="Type" value={selected.type || "N/A"} />
-                                    <InfoItem label="Unit" value={selected.unit || "N/A"} />
-                                    <InfoItem label="Company" value={selected.company || "N/A"} />
-                                    <InfoItem label="Seller" value={selected.seller || "N/A"} />
-                                    <InfoItem label="Stock" value={`${selected.stock} boxes`} />
-                                </div>
-
-                                {/* guidelines */}
-                                <div className="mt-5">
-                                    <p className={`text-[15px] font-bold ${t.guideTitle}`}>
-                                        Pharmacist Safety Guidelines:
-                                    </p>
-                                    <p className={`mt-1.5 text-sm leading-relaxed ${t.guideText}`}>
-                                        {selected.description}
-                                    </p>
-                                    <p className={`mt-1.5 text-sm leading-relaxed ${t.guideText}`}>
-                                        Take strictly as prescribed by your physician. Store in a cool dry place away
-                                        from direct sunlight.
-                                    </p>
-                                </div>
-
-                                <hr className={`my-5 ${t.divider}`} />
-
-                                {/* actions */}
-                                <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-stretch">
-                                    <div
-                                        className={`flex h-12 shrink-0 items-center justify-between overflow-hidden rounded-xl min-[420px]:justify-start ${t.stepper}`}
-                                    >
-                                        <button
-                                            type="button"
-                                            aria-label="Decrease quantity"
-                                            onClick={() => changeQty(quantity - 1)}
-                                            disabled={quantity <= 1}
-                                            className={`flex h-full w-11 items-center justify-center transition-colors disabled:opacity-40 min-[420px]:w-10 ${t.stepBtn}`}
-                                        >
-                                            <FaMinus className="text-xs" />
-                                        </button>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={maxQty}
-                                            value={quantity}
-                                            onChange={(e) => changeQty(e.target.value)}
-                                            aria-label="Quantity"
-                                            className={`h-full w-14 text-center text-sm font-bold outline-none [appearance:textfield] min-[420px]:w-12 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${t.stepInput}`}
-                                        />
-                                        <button
-                                            type="button"
-                                            aria-label="Increase quantity"
-                                            onClick={() => changeQty(quantity + 1)}
-                                            disabled={quantity >= maxQty}
-                                            className={`flex h-full w-11 items-center justify-center transition-colors disabled:opacity-40 min-[420px]:w-10 ${t.stepBtn}`}
-                                        >
-                                            <FaPlus className="text-xs" />
-                                        </button>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAddToCart(selected, quantity)}
-                                        className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-[15px] font-bold shadow-lg shadow-teal-600/20 transition-colors ${t.btnPrimary}`}
-                                    >
-                                        <FaCartShopping className="text-sm" />
-                                        Select &amp; Add to Cart
-                                    </button>
-                                </div>
+                        {/* Top: thumbnail + type pill + name + stock */}
+                        <div className="flex items-center gap-4 pr-8">
+                            <div className="w-20 h-20 shrink-0 rounded-2xl bg-base-200 flex items-center justify-center overflow-hidden">
+                                <img src={selected.image} alt={selected.name} onError={hideBrokenImg} className="max-w-full max-h-full object-contain" />
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold tracking-wider bg-teal-50 text-teal-700 rounded-full px-2.5 py-0.5 uppercase">{selected.type}</span>
+                                <h3 className="text-2xl font-bold text-base-content leading-tight">{selected.name}</h3>
+                                <p className="text-xs text-base-content/60 flex items-center gap-1.5"><FiPackage className="text-teal-600" /> {selected.stock} boxes available today</p>
                             </div>
                         </div>
-                    );
-                })()}
+
+                        {/* Pricing breakdown */}
+                        <div className="mt-5 bg-base-200/70 rounded-2xl p-4">
+                            <p className="text-sm font-semibold text-base-content">Pricing Breakdown:</p>
+                            <p className="mt-1"><span className="text-2xl font-bold text-teal-600">{money(selected.price)}</span> <span className="text-xs font-medium text-red-500">({selected.discountPercentage ?? "0%"} discount price)</span></p>
+                            {qty > 1 && <p className="text-xs text-base-content/60 mt-1">Total for {qty}: <b>{money(selected.price * qty)}</b></p>}
+                        </div>
+
+                        {/* All important info */}
+                        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                            {[
+                                ["Category", selected.category],
+                                ["Type", selected.type],
+                                ["Unit", selected.unit],
+                                ["Company", selected.company],
+                                ["Seller", selected.seller],
+                                ["Stock", `${selected.stock} boxes`],
+                            ].map(([label, value]) => (
+                                <div key={label} className="min-w-0">
+                                    <p className="text-base-content/50">{label}</p>
+                                    <p className="font-semibold text-base-content truncate">{value || "NA"}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Description + safety text */}
+                        <div className="mt-4">
+                            <p className="text-sm font-semibold text-base-content">Pharmacist Safety Guidelines:</p>
+                            <p className="text-xs text-base-content/70 mt-1">{selected.description}</p>
+                            <p className="text-xs text-base-content/70 mt-1">Take strictly as prescribed by your physician. Store in a cool dry place away from direct sunlight.</p>
+                        </div>
+
+                        {/* Quantity + add to cart */}
+                        <div className="mt-5 pt-4 border-t border-base-content/10 flex items-center gap-3">
+                            <div className="flex items-center border border-base-content/15 rounded-xl overflow-hidden">
+                                <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-9 h-10 flex items-center justify-center bg-base-200 hover:bg-base-300"><FiMinus /></button>
+                                <span className="w-10 text-center text-sm font-semibold">{qty}</span>
+                                <button onClick={() => setQty((q) => Math.min(Number(selected.stock) || 1, q + 1))} className="w-9 h-10 flex items-center justify-center bg-base-200 hover:bg-base-300"><FiPlus /></button> {/* capped at stock */}
+                            </div>
+                            <button onClick={() => handleAddToCart(selected, qty)} className="btn flex-1 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 rounded-xl"><FiShoppingCart /> Select &amp; Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
