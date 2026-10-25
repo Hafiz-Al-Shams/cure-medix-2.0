@@ -1,37 +1,31 @@
-// 📁 PATH: src/pages/OnlineDoctor/OnlineDoctor.jsx  (MODIFIED existing file – replace the whole file; wait-time card removed)
 import { useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
-import { FaStethoscope, FaHospital } from "react-icons/fa"; // FaHospital = building icon on the certificate
-import { FiShield, FiFileText, FiUserCheck, FiMapPin, FiCalendar, FiVideo, FiMic, FiMaximize, FiPhoneOff, FiX, FiSearch, FiCheck, FiDownload, FiArrowRight, FiClock } from "react-icons/fi";
+import { FaStethoscope, FaHospital } from "react-icons/fa";
+import { FiShield, FiFileText, FiUserCheck, FiCalendar, FiVideo, FiX, FiCheck, FiArrowRight, FiClock } from "react-icons/fi";
+import useAuth from "../../hooks/useAuth";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
 
-// ───────────── Static data (edit freely) ─────────────
-// "group" decides which filter chip a doctor appears under
-const doctors = [
-    { name: "Dr. Sarah Jenkins", specialty: "General Practitioner", group: "General Practice", rating: 4.9, reviews: 142, years: 12, next: "Today 11:00 AM", fee: 35, img: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop" },
-    { name: "Dr. Mateo Novak", specialty: "Dermatology", group: "Dermatology", rating: 4.8, reviews: 98, years: 9, next: "Today 02:15 PM", fee: 45, img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop" },
-    { name: "Dr. Elena Petrova", specialty: "Pediatrics", group: "Pediatrics", rating: 5.0, reviews: 210, years: 15, next: "Tomorrow 09:30 AM", fee: 40, img: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop" },
-    { name: "Dr. Oliver Dupont", specialty: "Cardiology", group: "Cardiology", rating: 4.9, reviews: 87, years: 18, next: "Oct 26, 10:00 AM", fee: 60, img: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=200&h=200&fit=crop" },
-    { name: "Dr. Sophie Müller", specialty: "General Practitioner", group: "General Practice", rating: 4.7, reviews: 115, years: 8, next: "Today 04:30 PM", fee: 30, img: "https://images.unsplash.com/photo-1527613426441-4da17471b66d?w=200&h=200&fit=crop" },
-    { name: "Dr. Luca Moretti", specialty: "Neurology", group: "Neurology", rating: 4.9, reviews: 76, years: 14, next: "Tomorrow 01:00 PM", fee: 55, img: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=200&h=200&fit=crop" },
-];
-const filters = ["All Specialists", "General Practice", "Dermatology", "Pediatrics", "Cardiology"]; // chips exactly like the design
+// ⚠️ Change this if your checkout route is different
+const PAYMENT_PATH = "/dashboard/payment";
+
+// ───────────── Static content (only text, nothing fake about doctors) ─────────────
 const steps = [
     { icon: <FiUserCheck />, title: "1. Choose Specialist", text: "Select from verified general practitioners, pediatricians, dermatologists, and specialists." },
     { icon: <FiCalendar />, title: "2. Pick Time Slot", text: "Book an immediate consultation or schedule a convenient appointment for later." },
     { icon: <FiVideo />, title: "3. Video Consult", text: "Connect via encrypted high-definition video call right from your browser or phone." },
     { icon: <FiFileText />, title: "4. RX & Sick Note", text: "Receive instant e-prescriptions sent to our pharmacy shop or download certified sick notes." },
 ];
-const timeSlots = ["09:30 AM", "11:00 AM", "02:15 PM", "04:00 PM", "05:30 PM", "07:00 PM"];
-const hospitals = [
-    { name: "Charité Central Hospital Inpatient Clinic", address: "Charitéplatz 1, 10117 Berlin", distance: "1.2 km away", tag: "24/7 ER Available" },
-    { name: "St. Hedwig Hospital & Emergency Care", address: "Große Hamburger Str. 5, 10115 Berlin", distance: "2.8 km away", tag: "Open Now" },
-];
 const faqs = [
     { q: "Is an online sick note recognized by my employer?", a: "Yes. Our licensed doctors issue digitally signed sick notes that are accepted by most employers and health insurers." },
     { q: "How do I get my prescribed medicine after the call?", a: "Your e-prescription is sent instantly to the CureMedix shop, where you can order it for home delivery." },
     { q: "What medical issues can be treated via online doctor consultations?", a: "Common conditions such as colds, skin issues, allergies, minor infections and follow-up care. Emergencies need in-person care." },
 ];
+
+// "2026-10-26" in the user's LOCAL time (en-CA gives YYYY-MM-DD)
+const toISO = (d) => d.toLocaleDateString("en-CA");
 
 // Doctor photo with a fallback (initials) if the image link is broken
 const DoctorImg = ({ doc }) => {
@@ -44,8 +38,8 @@ const DoctorImg = ({ doc }) => {
     );
 };
 
-// Reusable popup shell used by all 3 popups.
-// size = popup width | tinted = light grey header strip (booking popup) | plain = small title + bare X + inset divider (prescription popup)
+// Reusable popup shell used by both popups.
+// tinted = light grey header strip (booking popup) | plain = small title + bare X + inset divider (prescription popup)
 const Modal = ({ title, subtitle, onClose, size = "max-w-xl", tinted = false, plain = false, children }) => (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}> {/* click outside = close */}
         <div className={`w-full ${size} bg-base-100 text-base-content rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
@@ -62,43 +56,109 @@ const Modal = ({ title, subtitle, onClose, size = "max-w-xl", tinted = false, pl
 );
 
 const OnlineDoctor = () => {
+    const { user } = useAuth();
+    const axiosSecure = useAxiosSecure();
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const doctorsRef = useRef(null); // the doctor list section (hero button scrolls here)
     const [activeFilter, setActiveFilter] = useState("All Specialists");
     const [bookingDoc, setBookingDoc] = useState(null); // doctor shown in the booking popup
-    const [dateIdx, setDateIdx] = useState(0); // selected day (0 = today)
-    const [time, setTime] = useState("11:00 AM"); // selected time slot
+    const [dateIdx, setDateIdx] = useState(0); // selected day (0 = tomorrow)
+    const [time, setTime] = useState(""); // selected time slot (empty until the user picks one)
     const [showRx, setShowRx] = useState(false); // sample sick note / e-prescription popup
-    const [showClinics, setShowClinics] = useState(false); // inpatient hospitals popup
-    const [cityInput, setCityInput] = useState("");
-    const [clinicQuery, setClinicQuery] = useState("");
     const [step, setStep] = useState(1); // booking popup: 1 = date & time, 2 = patient details
-    const [fullName, setFullName] = useState(""); // step 2 fields
+    const [fullName, setFullName] = useState("");
     const [reason, setReason] = useState("");
     const [formError, setFormError] = useState("");
 
-    // Next 3 days built from today's real date: Today / Tomorrow / weekday name
-    const days = [0, 1, 2].map((n) => {
+    // 🔥 Doctors come from the database
+    const { data: doctors = [], isLoading, isError, refetch } = useQuery({
+        queryKey: ["doctors"],
+        queryFn: async () => (await axiosSecure.get("/doctors")).data,
+    });
+
+    // Bookable days = tomorrow + the next 2 days, always built from today's REAL date
+    const days = [1, 2, 3].map((n) => {
         const d = new Date();
         d.setDate(d.getDate() + n);
-        return { label: n === 0 ? "Today" : n === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "long" }), sub: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) };
+        return {
+            label: n === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "long" }),
+            sub: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+            full: d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
+            iso: toISO(d),
+        };
     });
-    const todayText = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); // issue date on the certificate
+    const selectedDay = days[dateIdx];
+    const todayText = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); // issue date on the sample certificate
 
+    // 🔥 Times already booked for this doctor on the selected day (those slots get disabled)
+    const { data: bookedTimes = [], isFetching: slotsLoading } = useQuery({
+        queryKey: ["booked-slots", bookingDoc?._id, selectedDay.iso],
+        enabled: !!bookingDoc,
+        queryFn: async () => (await axiosSecure.get("/appointment-slots", { params: { doctorId: bookingDoc._id, date: selectedDay.iso } })).data,
+    });
+    const validTime = bookedTimes.includes(time) ? "" : time; // a booked slot can never stay selected
+
+    // Filter chips built from the real doctors
+    const filters = ["All Specialists", ...new Set(doctors.map((d) => d.group))];
     const visibleDoctors = activeFilter === "All Specialists" ? doctors : doctors.filter((d) => d.group === activeFilter);
-    const visibleClinics = hospitals.filter((h) => `${h.name} ${h.address}`.toLowerCase().includes(clinicQuery.toLowerCase()));
 
-    const scrollToDoctors = () => doctorsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); // "To the CureMedix Online Doctor"
-    // Opens the booking popup fresh (step 1, default slot, empty form)
-    const openBooking = (doc) => { setDateIdx(0); setTime("11:00 AM"); setStep(1); setFullName(""); setReason(""); setFormError(""); setBookingDoc(doc); };
+    const scrollToDoctors = () => doctorsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Opens the booking popup (login required)
+    const openBooking = (doc) => {
+        if (!user?.email) {
+            Swal.fire({
+                title: "You are not Logged In",
+                text: "Please login to book an appointment.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, login!",
+                buttonsStyling: false,
+                reverseButtons: true,
+                customClass: {
+                    popup: "rounded-2xl",
+                    title: "text-xl font-bold",
+                    actions: "gap-3",
+                    confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold transition-colors",
+                    cancelButton: "px-5 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors",
+                },
+            }).then((result) => {
+                if (result.isConfirmed) navigate("/signIn", { state: { from: location } }); // comes back here after login
+            });
+            return;
+        }
+        setDateIdx(0);
+        setTime("");
+        setStep(1);
+        setFullName(user.displayName || "");
+        setReason("");
+        setFormError("");
+        setBookingDoc(doc);
+    };
     const closeBooking = () => setBookingDoc(null);
 
-    // Step 2 "Confirm Appointment": checks both fields, closes the popup and confirms the booking
-    const confirmAppointment = () => {
+    // Step 2 button: validates, then sends the booking to the checkout page (payment comes next)
+    const goToPayment = () => {
         if (!fullName.trim() || !reason.trim()) { setFormError("Please enter your name and the reason for your visit."); return; }
-        const summary = `${fullName.trim()} • ${bookingDoc.name} • ${days[dateIdx].label} (${days[dateIdx].sub}) at ${time}`;
+        const booking = {
+            doctorId: bookingDoc._id,
+            doctorName: bookingDoc.name,
+            specialty: bookingDoc.specialty,
+            doctorImg: bookingDoc.img,
+            fee: bookingDoc.fee,
+            dateISO: selectedDay.iso,
+            dateText: selectedDay.full,
+            time: validTime,
+            patientName: fullName.trim(),
+            reason: reason.trim(),
+        };
         closeBooking();
-        Swal.fire({ icon: "success", title: "Appointment Confirmed", text: summary, confirmButtonText: "OK", buttonsStyling: false, customClass: { popup: "rounded-2xl", confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold" } });
+        navigate(PAYMENT_PATH, { state: { booking } });
     };
+
+    const selectedBtn = "border-teal-500 bg-teal-50 text-teal-700 [[data-theme=dark]_&]:bg-teal-900/30 [[data-theme=dark]_&]:text-teal-300";
 
     return (
         <>
@@ -111,19 +171,18 @@ const OnlineDoctor = () => {
                 <div className="max-w-screen-xl mx-auto px-4 pt-14 pb-24 grid lg:grid-cols-2 gap-12 items-center">
                     <div>
                         <span className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-300 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1.5">
-                            <FiClock /> Your online doctor 24/7 at your Service... {/* clock icon like the design */}
+                            <FiClock /> Your online doctor 24/7 at your Service...
                         </span>
                         <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight">
-                            Goodbye waiting room.<br /><span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">Hello online doctor.</span> {/* green→mint gradient text */}
+                            Goodbye waiting room.<br /><span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">Hello online doctor.</span>
                         </h1>
                         <p className="mt-5 text-base md:text-lg text-white/75 max-w-xl">
                             Speak to a qualified specialist online in just a few minutes via CureMedix. You can receive a certified sick note (AU) and electronic prescriptions directly via the platform.
                         </p>
-                        <div className="mt-7 flex flex-col sm:flex-row gap-3">
+                        <div className="mt-7">
                             <button onClick={scrollToDoctors} className="btn border-0 bg-emerald-500 hover:bg-emerald-600 text-white gap-2 shadow-lg shadow-emerald-500/30"><FaStethoscope /> To the CureMedix Online Doctor</button>
-                            <button onClick={() => setShowClinics(true)} className="btn bg-white/5 border border-white/15 text-white hover:bg-white/10 gap-2"><FiMapPin className="text-emerald-400" /> Find an inpatient doctor near you</button>
                         </div>
-                        <div className="mt-10 pt-5 border-t border-white/10 flex flex-wrap justify-between gap-x-8 gap-y-3 text-xs text-white/70 max-w-2xl"> {/* badges spread evenly */}
+                        <div className="mt-10 pt-5 border-t border-white/10 flex flex-wrap justify-between gap-x-8 gap-y-3 text-xs text-white/70 max-w-2xl">
                             <span className="flex items-center gap-2"><FiShield className="text-emerald-400" /> GDPR &amp; HIPAA Compliant</span>
                             <span className="flex items-center gap-2"><FiFileText className="text-emerald-400" /> Official E-Prescriptions</span>
                             <span className="flex items-center gap-2"><FiUserCheck className="text-emerald-400" /> Licensed Specialists</span>
@@ -134,16 +193,9 @@ const OnlineDoctor = () => {
                     <div className="relative flex justify-center lg:justify-end">
                         <div className="relative w-full max-w-sm rounded-[2rem] border border-white/15 bg-white/5 p-2.5 shadow-2xl">
                             <div className="relative h-[26rem] rounded-3xl overflow-hidden bg-slate-800">
-                                <img src="https://i.ibb.co/b5zPg2by/online-doctor.jpg" alt="Online Doctor" className="w-full h-full object-cover" /> {/* your original doctor image */}
-                                <span className="absolute left-3 top-3 flex items-center gap-1.5 text-[11px] font-semibold bg-black/55 rounded-full px-3 py-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Dr. Sarah Jenkins</span>
-                                <span className="absolute right-3 top-3 text-[11px] font-mono text-emerald-300 bg-black/55 rounded px-2 py-1">12:45 Live</span>
-                                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=280&fit=crop" alt="You" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute right-4 top-1/2 w-20 h-28 rounded-xl border-2 border-white/30 object-cover bg-slate-600" /> {/* small self-view photo */}
-                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] justify-center flex gap-4 bg-black/65 rounded-2xl px-4 py-2.5">
-                                    <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"><FiMic /></span>
-                                    <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center"><FiVideo /></span>
-                                    <span className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center"><FiMaximize /></span>
-                                    <span className="w-9 h-9 rounded-full bg-rose-500 flex items-center justify-center"><FiPhoneOff /></span>
-                                </div>
+                                <img src="https://i.ibb.co/b5zPg2by/online-doctor.jpg" alt="Online Doctor" className="w-full h-full object-cover" />
+                                {doctors[0] && <span className="absolute left-3 top-3 flex items-center gap-1.5 text-[11px] font-semibold bg-black/55 rounded-full px-3 py-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> {doctors[0].name}</span>}
+                                <span className="absolute right-3 top-3 text-[11px] font-semibold text-emerald-300 bg-black/55 rounded-full px-3 py-1">Encrypted HD Video</span>
                             </div>
                         </div>
                     </div>
@@ -186,19 +238,31 @@ const OnlineDoctor = () => {
                         </div>
                     </div>
 
+                    {/* Loading / error / empty states */}
+                    {isLoading && <div className="flex justify-center py-16"><span className="loading loading-bars loading-lg"></span></div>}
+                    {isError && (
+                        <div className="mt-8 rounded-2xl border border-dashed border-base-content/20 bg-base-100 px-6 py-12 text-center">
+                            <p className="font-semibold">Could not load doctors</p>
+                            <p className="text-sm text-base-content/60 mt-1">Please check your connection and try again.</p>
+                            <button onClick={() => refetch()} className="btn btn-sm mt-4 border-0 bg-teal-600 hover:bg-teal-700 text-white">Try again</button>
+                        </div>
+                    )}
+                    {!isLoading && !isError && visibleDoctors.length === 0 && <p className="text-center text-base-content/60 py-16">No doctors available in this category right now.</p>}
+
                     <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {visibleDoctors.map((doc) => (
-                            <div key={doc.name} className="bg-base-100 border border-base-content/10 rounded-3xl p-5 shadow-sm">
+                            <div key={doc._id} className="bg-base-100 border border-base-content/10 rounded-3xl p-5 shadow-sm">
                                 <div className="flex items-center gap-3">
                                     <DoctorImg doc={doc} />
                                     <div>
                                         <span className="text-[9px] font-bold tracking-wider text-teal-700 bg-emerald-50 border border-emerald-100 rounded px-2 py-0.5 uppercase">{doc.specialty}</span>
                                         <h3 className="font-bold mt-1 leading-tight">{doc.name}</h3>
-                                        <p className="text-[11px] text-base-content/60"><span className="text-amber-500 font-bold">★ {doc.rating.toFixed(1)}</span> ({doc.reviews}) • {doc.years} Yrs Exp.</p>
+                                        <p className="text-[11px] text-base-content/60"><span className="text-amber-500 font-bold">★ {Number(doc.rating).toFixed(1)}</span> ({doc.reviews}) • {doc.years} Yrs Exp.</p>
                                     </div>
                                 </div>
                                 <div className="mt-4 flex justify-between items-end bg-base-200/70 rounded-xl px-4 py-3">
-                                    <div><p className="text-[10px] text-base-content/50">Next Availability</p><p className="text-xs font-bold text-teal-700">{doc.next}</p></div>
+                                    {/* Always "Tomorrow", so this can never show an old date */}
+                                    <div><p className="text-[10px] text-base-content/50">Next Availability</p><p className="text-xs font-bold text-teal-700">Tomorrow {doc.nextTime}</p></div>
                                     <div className="text-right"><p className="text-[10px] text-base-content/50">Consultation Fee</p><p className="text-xs font-bold">{doc.fee}$</p></div>
                                 </div>
                                 <button onClick={() => openBooking(doc)} className="btn btn-sm w-full mt-4 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 shadow-md shadow-teal-600/25"><FiCalendar /> Book Appointment</button>
@@ -233,7 +297,7 @@ const OnlineDoctor = () => {
                                 <span className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center"><FaHospital /></span>
                                 <div><p className="text-xs font-bold">CureMedix Health Network</p><p className="text-[10px] text-base-content/50">Official Electronic Certificate</p></div>
                             </div>
-                            <span className="text-[9px] font-bold text-teal-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">VALID &amp; VERIFIED</span>
+                            <span className="text-[9px] font-bold text-teal-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">SAMPLE</span>
                         </div>
                         <div className="mt-4 grid grid-cols-2 gap-2 border border-base-content/10 rounded-xl p-3 text-xs">
                             <div><p className="text-[9px] text-base-content/50 uppercase">Patient Name</p><p className="font-bold">Alex Morgan</p></div>
@@ -249,7 +313,7 @@ const OnlineDoctor = () => {
                                 <span className="w-8 h-8 rounded-full bg-base-200 text-[10px] font-bold flex items-center justify-center">DR</span>
                                 <div><p className="text-[11px] font-bold">Dr. Markus Webber</p><p className="text-[9px] text-base-content/50">License #DE-894210</p></div>
                             </div>
-                            <div className="grid grid-cols-2 gap-0.5">{[0, 1, 2, 3].map((i) => <span key={i} className="w-3.5 h-3.5 border-2 border-base-content rounded-sm" />)}</div> {/* mini QR icon */}
+                            <div className="grid grid-cols-2 gap-0.5">{[0, 1, 2, 3].map((i) => <span key={i} className="w-3.5 h-3.5 border-2 border-base-content rounded-sm" />)}</div>
                         </div>
                     </div>
                 </div>
@@ -265,7 +329,7 @@ const OnlineDoctor = () => {
                     <div className="mt-8 space-y-3">
                         {faqs.map((f) => (
                             <div key={f.q} className="collapse collapse-arrow bg-base-100 border border-base-content/10 rounded-xl">
-                                <input type="radio" name="doctor-faq" /> {/* radio = only one item open at a time */}
+                                <input type="radio" name="doctor-faq" />
                                 <div className="collapse-title text-sm font-semibold">{f.q}</div>
                                 <div className="collapse-content text-xs text-base-content/70"><p>{f.a}</p></div>
                             </div>
@@ -282,68 +346,55 @@ const OnlineDoctor = () => {
                             <p className="text-sm font-semibold mb-3">1. Select Date</p>
                             <div className="grid grid-cols-3 gap-3">
                                 {days.map((d, i) => (
-                                    <button key={d.label} onClick={() => setDateIdx(i)} className={`rounded-xl border py-2.5 text-center ${dateIdx === i ? "border-teal-500 bg-teal-50 text-teal-700 [[data-theme=dark]_&]:bg-teal-900/30 [[data-theme=dark]_&]:text-teal-300" : "border-base-content/10 hover:border-teal-400"}`}>
+                                    <button key={d.iso} onClick={() => { setDateIdx(i); setTime(""); }} className={`rounded-xl border py-2.5 text-center ${dateIdx === i ? selectedBtn : "border-base-content/10 hover:border-teal-400"}`}>
                                         <p className="text-sm font-bold">{d.label}</p><p className="text-[11px] opacity-70">{d.sub}</p>
                                     </button>
                                 ))}
                             </div>
-                            <p className="text-sm font-semibold mt-6 mb-3">2. Available Time Slots</p>
+                            <p className="text-sm font-semibold mt-6 mb-3 flex items-center gap-2">2. Available Time Slots {slotsLoading && <span className="loading loading-spinner loading-xs text-teal-600"></span>}</p>
                             <div className="grid grid-cols-3 gap-3">
-                                {timeSlots.map((t) => (
-                                    <button key={t} onClick={() => setTime(t)} className={`rounded-xl border py-2.5 text-sm font-bold ${time === t ? "border-teal-500 bg-teal-50 text-teal-700 [[data-theme=dark]_&]:bg-teal-900/30 [[data-theme=dark]_&]:text-teal-300" : "border-base-content/10 hover:border-teal-400"}`}>{t}</button>
-                                ))}
+                                {bookingDoc.slots.map((t) => {
+                                    const booked = bookedTimes.includes(t);
+                                    return (
+                                        <button key={t} disabled={booked} onClick={() => setTime(t)} title={booked ? "Already booked" : ""} className={`rounded-xl border py-2.5 text-sm font-bold ${booked ? "border-base-content/10 text-base-content/30 line-through cursor-not-allowed bg-base-200/50" : validTime === t ? selectedBtn : "border-base-content/10 hover:border-teal-400"}`}>{t}</button>
+                                    );
+                                })}
                             </div>
-                            <button onClick={() => setStep(2)} className="btn w-full mt-5 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 rounded-xl">Next: Patient Details <FiArrowRight /></button> {/* goes to step 2 */}
+                            {bookedTimes.length > 0 && <p className="text-[11px] text-base-content/50 mt-3">Crossed-out times are already booked.</p>}
+                            <button onClick={() => setStep(2)} disabled={!validTime} className="btn w-full mt-5 border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed">Next: Patient Details <FiArrowRight /></button>
                         </>
                     ) : (
                         <>
-                            <label className="text-sm font-semibold">Full Name</label>
+                            {/* Booking summary */}
+                            <div className="rounded-2xl bg-base-200/70 border border-base-content/10 p-4 text-sm flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="font-bold truncate">{bookingDoc.name}</p>
+                                    <p className="text-xs text-base-content/60">{selectedDay.full} • {validTime}</p>
+                                </div>
+                                <p className="font-bold text-teal-600 shrink-0">{bookingDoc.fee}$</p>
+                            </div>
+
+                            <label className="text-sm font-semibold block mt-4">Full Name</label>
                             <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" className="mt-1.5 w-full bg-base-200/60 border border-base-content/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-teal-500" />
                             <label className="text-sm font-semibold block mt-4">Reason for Visit / Symptoms</label>
                             <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Describe symptoms briefly (e.g. fever, cough, skin allergy)..." className="mt-1.5 w-full bg-base-200/60 border border-base-content/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-teal-500 resize-y" />
                             {formError && <p className="text-xs text-red-500 mt-2">{formError}</p>}
                             <div className="mt-5 flex gap-3">
                                 <button onClick={() => setStep(1)} className="btn flex-1 border-0 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-slate-100">← Back</button>
-                                <button onClick={confirmAppointment} className="btn flex-[2] border-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Confirm Appointment</button>
+                                <button onClick={goToPayment} className="btn flex-[2] border-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2">Continue to Payment <FiArrowRight /></button>
                             </div>
                         </>
                     )}
                 </Modal>
             )}
 
-            {/* ═════════ POPUP: Sample E-Prescription ═════════ */}
+            {/* ═════════ POPUP: Sample E-Prescription (demo only: no download button) ═════════ */}
             {showRx && (
-                <Modal title="Sample E-Prescription Download" onClose={() => setShowRx(false)} size="max-w-lg" plain>
+                <Modal title="Sample E-Prescription" onClose={() => setShowRx(false)} size="max-w-lg" plain>
                     <div className="bg-base-200/70 rounded-2xl p-4 text-sm">
                         <div className="flex justify-between gap-3"><p className="font-bold">Prescription ID: #RX-2026-9912</p><p className="font-bold text-emerald-600 text-xs sm:text-sm">Active / Unredeemed</p></div>
                         <p className="text-base-content/70 mt-3">1× Budesonide Nebuliser Suspension BP (0.5mg/2ml)</p>
                         <p className="text-base-content/70 mt-2">1× Paracetamol 500mg (20× Tablets)</p>
-                    </div>
-                    {/* Demo button: shows a notice, since this is only a sample document */}
-                    <button onClick={() => Swal.fire({ icon: "info", title: "Sample only", text: "This is a demo document, so there is no file to download.", buttonsStyling: false, customClass: { popup: "rounded-2xl", confirmButton: "px-5 py-2 rounded-xl bg-teal-600 text-white font-semibold" } })} className="btn w-full mt-4 border-0 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl"><FiDownload /> Download PDF Copy</button>
-                </Modal>
-            )}
-
-            {/* ═════════ POPUP: Inpatient hospitals ═════════ */}
-            {showClinics && (
-                <Modal title="Find Inpatient Hospitals & Local Clinics" onClose={() => setShowClinics(false)} size="max-w-2xl">
-                    <div className="flex gap-3">
-                        <input value={cityInput} onChange={(e) => setCityInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setClinicQuery(cityInput)} placeholder="Enter City or Zip Code (e.g., Berlin, 10115)..." className="flex-1 min-w-0 bg-base-200/70 border border-base-content/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-teal-500" />
-                        <button onClick={() => setClinicQuery(cityInput)} className="btn border-0 bg-teal-600 hover:bg-teal-700 text-white rounded-xl gap-2"><FiSearch className="hidden sm:block" /> Search</button>
-                    </div>
-                    <div className="mt-5 space-y-3">
-                        {visibleClinics.length === 0 && <p className="text-center text-sm text-base-content/60 py-6">No clinics found for that search.</p>}
-                        {visibleClinics.map((h) => (
-                            <div key={h.name} className="flex items-center justify-between gap-3 bg-base-200/60 border border-base-content/10 rounded-2xl p-4">
-                                <div className="min-w-0">
-                                    <p className="font-bold text-sm">{h.name}</p>
-                                    <p className="text-xs text-base-content/60">{h.address} • {h.distance}</p>
-                                    <span className="inline-block mt-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-md px-2 py-0.5">{h.tag}</span>
-                                </div>
-                                {/* Opens the real place in Google Maps */}
-                                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`)}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline border-teal-600 text-teal-700 hover:bg-teal-600 hover:border-teal-600 hover:text-white rounded-lg">Directions</a>
-                            </div>
-                        ))}
                     </div>
                 </Modal>
             )}

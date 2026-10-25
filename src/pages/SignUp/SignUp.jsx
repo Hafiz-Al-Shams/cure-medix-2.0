@@ -1,4 +1,4 @@
-// 📁 PATH: src/pages/SignUp/SignUp.jsx  (MODIFIED existing file – replace the whole file; now adapts to dark mode)
+// 📁 PATH: src/pages/SignUp/SignUp.jsx  (MODIFIED existing file – replace the whole file; dark mode + fully responsive on mobile)
 import { useContext, useState } from "react";
 import AuthContext from "../../context/AuthContext/AuthContext";
 import Swal from "sweetalert2";
@@ -17,7 +17,7 @@ const SignUp = () => {
     const { register, handleSubmit, reset, formState: { errors } } = useForm(); // react-hook-form (unchanged)
     const { createUser, updateUserProfile, signOutUser } = useContext(AuthContext);
     const navigate = useNavigate();
-    const [showPassword, setShowPassword] = useState(false); // NEW: eye icon toggle
+    const [showPassword, setShowPassword] = useState(false); // eye icon toggle
 
     // ✅ Whole sign-up flow unchanged: upload image -> create user -> update profile -> save in DB -> sign out -> go to login
     const onSubmit = async (data) => {
@@ -57,27 +57,28 @@ const SignUp = () => {
     };
 
     // Shared input look + red error text
-    const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:text-slate-100 [[data-theme=dark]_&]:placeholder:text-slate-500 [[data-theme=dark]_&]:[color-scheme:dark]";
+    // 📱 text-base on phones (16px stops iOS from zooming the page on focus), text-sm from sm: upward (same as before)
+    const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-base sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:text-slate-100 [[data-theme=dark]_&]:placeholder:text-slate-500 [[data-theme=dark]_&]:[color-scheme:dark]";
     const labelClass = "text-sm font-semibold text-slate-800 [[data-theme=dark]_&]:text-slate-100";
     const errClass = "text-xs text-red-600 mt-1 [[data-theme=dark]_&]:text-red-400";
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-4 py-10">
+        <div className="min-h-[80vh] flex items-center justify-center p-3 sm:p-4 py-6 sm:py-10">
             <Helmet>
                 <title>CureMedix | Sign Up</title>
             </Helmet>
 
             {/* ONE card with the same border on left, right, top and bottom */}
             <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl [[data-theme=dark]_&]:bg-slate-900 [[data-theme=dark]_&]:border-slate-700 [[data-theme=dark]_&]:shadow-black/50">
-                {/* ── Form area inside the card ── */}
-                <div className="p-6 sm:p-10 lg:p-12">
-                    {/* Sign In / Sign Up tab switch */}
-                    <div className="flex w-fit mx-auto bg-slate-100 border border-slate-200 rounded-2xl p-1 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 text-sm font-semibold">
-                        <Link to="/signIn" className="flex items-center gap-2 px-8 py-2 rounded-xl text-slate-500 hover:text-teal-700 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:hover:text-teal-300"><FiLogIn /> Sign In</Link>
-                        <span className="flex items-center gap-2 px-8 py-2 rounded-xl bg-white text-teal-700 shadow-sm [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-teal-300"><FiUserPlus /> Sign Up</span>
+                {/* ── Form area inside the card (smaller padding on small phones) ── */}
+                <div className="p-5 min-[400px]:p-6 sm:p-10 lg:p-12">
+                    {/* Sign In / Sign Up tab switch – full width on phones, compact pill from sm: upward */}
+                    <div className="flex w-full sm:w-fit mx-auto bg-slate-100 border border-slate-200 rounded-2xl p-1 [[data-theme=dark]_&]:bg-slate-800 [[data-theme=dark]_&]:border-slate-700 text-sm font-semibold">
+                        <Link to="/signIn" className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-4 sm:px-8 py-2 rounded-xl text-slate-500 hover:text-teal-700 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:hover:text-teal-300"><FiLogIn /> Sign In</Link>
+                        <span className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-4 sm:px-8 py-2 rounded-xl bg-white text-teal-700 shadow-sm [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-teal-300"><FiUserPlus /> Sign Up</span>
                     </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="mt-5 sm:mt-6 space-y-4">
                         {/* Name */}
                         <div>
                             <label className={labelClass}>Name <span className="text-red-500">*</span></label>
@@ -93,12 +94,13 @@ const SignUp = () => {
                             <label className={labelClass}>Upload Image<span className="text-red-500">*</span></label>
                             <div className="mt-1.5 flex items-center gap-3 border border-dashed border-slate-300 bg-slate-50 rounded-xl p-3 [[data-theme=dark]_&]:border-slate-600 [[data-theme=dark]_&]:bg-slate-800">
                                 <div className="w-10 h-10 shrink-0 rounded-lg bg-slate-200 text-slate-500 [[data-theme=dark]_&]:bg-slate-700 [[data-theme=dark]_&]:text-slate-300 flex items-center justify-center text-xl"><FiUploadCloud /></div>
-                                <div className="min-w-0">
+                                {/* flex-1 + min-w-0 + w-full on the input: long file names can never push the card wider than the screen */}
+                                <div className="min-w-0 flex-1">
                                     <input
                                         {...register("image", { required: "Image is required" })}
                                         type="file"
                                         accept="image/*"
-                                        className="text-xs text-slate-500 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:file:bg-slate-100 [[data-theme=dark]_&]:file:text-slate-900 file:mr-2 file:rounded-md file:border-0 file:bg-slate-900 file:text-white file:text-[11px] file:font-bold file:uppercase file:px-3 file:py-1.5 file:cursor-pointer"
+                                        className="block w-full max-w-full text-xs text-slate-500 [[data-theme=dark]_&]:text-slate-400 [[data-theme=dark]_&]:file:bg-slate-100 [[data-theme=dark]_&]:file:text-slate-900 file:mr-2 file:rounded-md file:border-0 file:bg-slate-900 file:text-white file:text-[11px] file:font-bold file:uppercase file:px-3 file:py-1.5 file:cursor-pointer"
                                     />
                                     <p className="text-[10px] text-slate-400 [[data-theme=dark]_&]:text-slate-500 mt-1">JPG, PNG or WEBP (Max 5MB)</p>
                                 </div>
@@ -146,7 +148,7 @@ const SignUp = () => {
                                     placeholder="password"
                                     className={inputClass}
                                 />
-                                <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 [[data-theme=dark]_&]:hover:text-slate-200">
+                                <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label="Toggle password" className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 [[data-theme=dark]_&]:hover:text-slate-200"> {/* p-1 = bigger tap area for thumbs */}
                                     {showPassword ? <FiEyeOff /> : <FiEye />}
                                 </button>
                             </div>

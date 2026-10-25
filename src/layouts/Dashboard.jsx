@@ -1,6 +1,6 @@
 // 📁 PATH: src/layouts/Dashboard.jsx  (MODIFIED existing file – replace the whole file)
 import { useEffect, useState } from "react";
-import { FaHome, FaList, FaShoppingCart, FaUsers, FaFileInvoice, FaCapsules, FaAd } from "react-icons/fa";
+import { FaHome, FaList, FaShoppingCart, FaUsers, FaFileInvoice, FaCapsules, FaAd, FaCalendarCheck } from "react-icons/fa";
 import { MdPayments, MdOutlineDarkMode, MdLightMode } from "react-icons/md";
 import { FiArrowLeft, FiMenu, FiX } from "react-icons/fi";
 import { NavLink, Link, Outlet } from "react-router-dom";
@@ -90,13 +90,14 @@ const Dashboard = () => {
                                 <NavItem to="/dashboard/users" icon={<FaUsers />} label="All Users" />
                                 <NavItem to="/dashboard/allCategories" icon={<FaList />} label="All Categories" />
                                 <NavItem to="/dashboard/manage-payments" icon={<MdPayments />} label="Manage Payments" />
+                                <NavItem to="/dashboard/manage-appointments" icon={<FaCalendarCheck />} label="Manage Appointments" /> {/* ✅ NEW */}
                             </>
                         )}
                         {isSeller && (
                             <>
                                 <NavItem to="/dashboard/sellerHome" icon={<FaHome />} label="Seller Home" />
                                 <NavItem to="/dashboard/manage-medicines" icon={<FaCapsules />} label="Manage Medicines" />
-                                <NavItem to="/dashboard/requestBanner" icon={<FaAd />} label="Request Banner" /> {/* NEW */}
+                                <NavItem to="/dashboard/requestBanner" icon={<FaAd />} label="Request Banner" />
                             </>
                         )}
                         {!isAdmin && !isSeller && (
@@ -104,6 +105,7 @@ const Dashboard = () => {
                                 <NavItem to="/dashboard/userHome" icon={<FaHome />} label="User Home" />
                                 <NavItem to="/dashboard/cart" icon={<FaShoppingCart />} label="My Cart" badge={cart.length} />
                                 <NavItem to="/dashboard/paymentHistory" icon={<FaFileInvoice />} label="Payment History" />
+                                <NavItem to="/dashboard/myAppointments" icon={<FaCalendarCheck />} label="My Appointments" /> {/* ✅ NEW */}
                             </>
                         )}
                     </ul>

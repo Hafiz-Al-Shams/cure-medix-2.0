@@ -1,10 +1,10 @@
 // 📁 PATH: src/pages/Dashboard/CheckoutForm.jsx  (MODIFIED existing file – replace the whole file)
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { FaCcAmex, FaCcMastercard, FaCcVisa, FaCreditCard, FaPills } from "react-icons/fa";
-import { FiCalendar, FiLock, FiShield, FiUser } from "react-icons/fi";
+import { FaCcAmex, FaCcMastercard, FaCcVisa, FaCreditCard, FaPills, FaStethoscope } from "react-icons/fa";
+import { FiCalendar, FiClock, FiLock, FiShield, FiUser } from "react-icons/fi";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 import useAuth from "../../hooks/useAuth";
 import useCart from "../../hooks/useCart";
@@ -41,7 +41,12 @@ const CheckoutForm = () => {
     const { user } = useAuth();
     const [cart, refetch] = useCart();
     const navigate = useNavigate();
+    const location = useLocation();
     const dark = useIsDark();
+
+    // ✅ NEW: a doctor booking sent from the Online Doctor page (null = normal medicine checkout)
+    const booking = location.state?.booking || null;
+    const isConsult = !!booking;
 
     const [clientSecret, setClientSecret] = useState("");
     const [error, setError] = useState("");
@@ -56,12 +61,14 @@ const CheckoutForm = () => {
         if (user?.displayName) setHolder((h) => h || user.displayName);
     }, [user]);
 
-    // ✅ FIX: quantity now comes straight from the database (saved by the Cart page), fallback 1
+    // quantity comes straight from the database (saved by the Cart page), fallback 1
     const getQty = (item) => item.quantity ?? 1;
 
-    // total = price × quantity for every medicine
-    const totalPrice = Math.round(cart.reduce((total, item) => total + Number(item.price) * getQty(item), 0) * 100) / 100;
-    const totalPieces = cart.reduce((sum, item) => sum + getQty(item), 0); // total number of pieces (e.g. 18)
+    // ✅ total = doctor fee for a booking, otherwise price × quantity for every medicine (unchanged)
+    const totalPrice = isConsult
+        ? Math.round(Number(booking.fee) * 100) / 100
+        : Math.round(cart.reduce((total, item) => total + Number(item.price) * getQty(item), 0) * 100) / 100;
+    const totalPieces = isConsult ? 1 : cart.reduce((sum, item) => sum + getQty(item), 0);
 
     useEffect(() => {
         if (totalPrice > 0) {
@@ -94,6 +101,17 @@ const CheckoutForm = () => {
         setProcessing(true);
         setError("");
         try {
+            // ✅ NEW: before charging, make sure nobody took the slot in the meantime
+            if (isConsult) {
+                const { data: takenTimes } = await axiosSecure.get("/appointment-slots", { params: { doctorId: booking.doctorId, date: booking.dateISO } });
+                if (takenTimes.includes(booking.time)) {
+                    const msg = "Sorry, this time slot was just booked by someone else. Please choose another time. You have not been charged.";
+                    setError(msg);
+                    errorAlert("Time slot unavailable", msg);
+                    return;
+                }
+            }
+
             // confirm payment (card number + expiry + cvc elements are read automatically)
             const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
                 payment_method: {
@@ -112,7 +130,26 @@ const CheckoutForm = () => {
             }
 
             if (paymentIntent.status === "succeeded") {
-                // ✅ NEW: a snapshot of every medicine bought (so the invoice can list them later,
+                // ───── ✅ NEW: DOCTOR BOOKING (cart is never touched) ─────
+                if (isConsult) {
+                    try {
+                        const res = await axiosSecure.post("/appointments", { ...booking, transactionId: paymentIntent.id });
+                        if (res.data?.insertedId) {
+                            setPaid(true);
+                            await successAlert("Payment successful", `Your appointment with ${booking.doctorName} is booked (status: Pending). Transaction ID: ${paymentIntent.id}`);
+                            navigate("/invoice", { state: { transactionId: paymentIntent.id } });
+                        } else {
+                            errorAlert("Payment received but booking not saved", `Please keep your transaction ID: ${paymentIntent.id}`);
+                        }
+                    } catch (saveErr) {
+                        console.error(saveErr);
+                        errorAlert("Payment received but booking not saved", `Please keep your transaction ID: ${paymentIntent.id}`);
+                    }
+                    return;
+                }
+
+                // ───── MEDICINE PURCHASE (unchanged) ─────
+                // a snapshot of every medicine bought (so the invoice can list them later,
                 // even if the medicine is edited/deleted afterwards)
                 const items = cart.map((item) => ({
                     cartId: item._id,
@@ -127,7 +164,7 @@ const CheckoutForm = () => {
                     lineTotal: Math.round(Number(item.price) * getQty(item) * 100) / 100,
                 }));
 
-                // saving the payment in the database (same data as before + items list)
+                // saving the payment in the database
                 const payment = {
                     email: user.email,
                     price: totalPrice,
@@ -135,8 +172,8 @@ const CheckoutForm = () => {
                     date: new Date(),
                     cartIds: cart.map((item) => item._id),
                     medicineIds: cart.map((item) => item.medicineId),
-                    items, // ✅ NEW
-                    totalItems: totalPieces, // ✅ NEW
+                    items,
+                    totalItems: totalPieces,
                     status: "pending",
                 };
                 const res = await axiosSecure.post("/payments", payment);
@@ -158,8 +195,8 @@ const CheckoutForm = () => {
         }
     };
 
-    // Nothing to pay for
-    if (cart.length === 0 && !paid) {
+    // Nothing to pay for (only for medicine checkout; a booking never needs the cart)
+    if (cart.length === 0 && !paid && !isConsult) {
         return (
             <div className="rounded-2xl border border-dashed border-base-content/20 bg-base-100 px-6 py-14 text-center">
                 <Helmet><title>CureMedix | Checkout</title></Helmet>
@@ -232,33 +269,70 @@ const CheckoutForm = () => {
                     <p className="mt-5 flex items-center justify-center gap-2 border-t border-base-content/10 pt-4 text-xs text-base-content/60"><FiLock className="text-teal-600" /> Encrypted &amp; secured by Stripe</p>
                 </form>
 
-                {/* ───────── Order summary (your real cart) ───────── */}
+                {/* ───────── Order summary ───────── */}
                 <aside className="order-1 rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm sm:p-6 lg:order-2">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/70">Order Summary</h2>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-base-content/70">{isConsult ? "Booking Summary" : "Order Summary"}</h2>
 
-                    <ul className="mt-4 max-h-80 divide-y divide-base-content/10 overflow-y-auto">
-                        {cart.map((item) => (
-                            <li key={item._id} className="flex items-center gap-3 py-3">
-                                <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-teal-500/10 text-teal-600">
-                                    {item.image ? <img src={item.image} alt={item.name} onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-cover" /> : <FaPills />}
+                    {isConsult ? (
+                        /* ✅ NEW: doctor booking details */
+                        <>
+                            <div className="mt-4 flex items-center gap-3">
+                                <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-teal-500/10 text-teal-600">
+                                    {booking.doctorImg ? <img src={booking.doctorImg} alt={booking.doctorName} onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-cover" /> : <FaStethoscope />}
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-semibold text-base-content">{item.name}</p>
-                                    <p className="truncate text-xs text-base-content/50">Qty: {getQty(item)}{item.type ? ` • ${item.type}` : ""}</p>
+                                    <p className="truncate text-sm font-semibold text-base-content">{booking.doctorName}</p>
+                                    <p className="truncate text-xs text-base-content/50">{booking.specialty}</p>
                                 </div>
-                                <p className="text-sm font-bold text-base-content">{money(Number(item.price) * getQty(item))}</p>
-                            </li>
-                        ))}
-                    </ul>
+                                <p className="text-sm font-bold text-base-content">{money(booking.fee)}</p>
+                            </div>
 
-                    <div className="mt-3 space-y-2 border-t border-base-content/10 pt-4 text-sm">
-                        <div className="flex justify-between text-base-content/70"><span>Items</span><span>{totalPieces}</span></div>
-                        <div className="flex justify-between text-base-content/70"><span>Subtotal</span><span>{money(totalPrice)}</span></div>
-                        <div className="flex items-center justify-between border-t border-base-content/10 pt-3">
-                            <span className="font-bold text-base-content">Total Due</span>
-                            <span className="text-xl font-bold text-teal-600">{money(totalPrice)}</span>
-                        </div>
-                    </div>
+                            <div className="mt-4 space-y-2 rounded-xl bg-base-200/60 p-3.5 text-xs">
+                                <div className="flex justify-between gap-3"><span className="flex items-center gap-1.5 text-base-content/60"><FiCalendar /> Date</span><span className="text-right font-semibold text-base-content">{booking.dateText}</span></div>
+                                <div className="flex justify-between gap-3"><span className="flex items-center gap-1.5 text-base-content/60"><FiClock /> Time</span><span className="font-semibold text-base-content">{booking.time}</span></div>
+                                <div className="flex justify-between gap-3"><span className="flex items-center gap-1.5 text-base-content/60"><FiUser /> Patient</span><span className="truncate text-right font-semibold text-base-content">{booking.patientName}</span></div>
+                                <div className="border-t border-base-content/10 pt-2"><p className="text-base-content/60">Reason</p><p className="mt-0.5 break-words font-semibold text-base-content">{booking.reason}</p></div>
+                            </div>
+
+                            <p className="mt-3 text-[11px] text-base-content/50">Your booking is saved as <b>Pending</b> once the payment is complete.</p>
+                            <Link to="/online-doctor" className="mt-2 inline-block text-xs font-semibold text-teal-600 hover:underline">← Change doctor or time</Link>
+
+                            <div className="mt-3 space-y-2 border-t border-base-content/10 pt-4 text-sm">
+                                <div className="flex justify-between text-base-content/70"><span>Video consultation</span><span>{money(totalPrice)}</span></div>
+                                <div className="flex items-center justify-between border-t border-base-content/10 pt-3">
+                                    <span className="font-bold text-base-content">Total Due</span>
+                                    <span className="text-xl font-bold text-teal-600">{money(totalPrice)}</span>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        /* medicines (unchanged) */
+                        <>
+                            <ul className="mt-4 max-h-80 divide-y divide-base-content/10 overflow-y-auto">
+                                {cart.map((item) => (
+                                    <li key={item._id} className="flex items-center gap-3 py-3">
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-teal-500/10 text-teal-600">
+                                            {item.image ? <img src={item.image} alt={item.name} onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-cover" /> : <FaPills />}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-base-content">{item.name}</p>
+                                            <p className="truncate text-xs text-base-content/50">Qty: {getQty(item)}{item.type ? ` • ${item.type}` : ""}</p>
+                                        </div>
+                                        <p className="text-sm font-bold text-base-content">{money(Number(item.price) * getQty(item))}</p>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <div className="mt-3 space-y-2 border-t border-base-content/10 pt-4 text-sm">
+                                <div className="flex justify-between text-base-content/70"><span>Items</span><span>{totalPieces}</span></div>
+                                <div className="flex justify-between text-base-content/70"><span>Subtotal</span><span>{money(totalPrice)}</span></div>
+                                <div className="flex items-center justify-between border-t border-base-content/10 pt-3">
+                                    <span className="font-bold text-base-content">Total Due</span>
+                                    <span className="text-xl font-bold text-teal-600">{money(totalPrice)}</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </aside>
             </div>
         </>

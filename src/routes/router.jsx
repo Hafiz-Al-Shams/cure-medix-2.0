@@ -1,4 +1,3 @@
-// 📁 PATH: src/routes/router.jsx  (MODIFIED existing file – replace the whole file)
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import Home from "../pages/Home/Home/Home";
@@ -27,6 +26,8 @@ import OnlineDoctor from "../pages/OnlineDoctor/OnlineDoctor";
 import InvoicePage from "../pages/InvoicePage";
 import Profile from "../pages/Profile/Profile";
 import RequestBanner from "../pages/Dashboard/RequestBanner";
+import MyAppointments from "../pages/Dashboard/MyAppointments"; // ✅ NEW
+import ManageAppointments from "../pages/Dashboard/ManageAppointments"; // ✅ NEW
 
 
 
@@ -90,6 +91,10 @@ const router = createBrowserRouter([
                 element: <AdminRoute><ManagePayments></ManagePayments></AdminRoute>,
             },
             {
+                path: 'manage-appointments', // ✅ NEW
+                element: <AdminRoute><ManageAppointments></ManageAppointments></AdminRoute>,
+            },
+            {
                 path: 'allCategories',
                 element: <AdminRoute><AllCategories></AllCategories></AdminRoute>,
             },
@@ -115,6 +120,10 @@ const router = createBrowserRouter([
             {
                 path: 'paymentHistory',
                 element: <PaymentHistory></PaymentHistory>
+            },
+            {
+                path: 'myAppointments', // ✅ NEW
+                element: <MyAppointments></MyAppointments>,
             },
 
             // seller routes

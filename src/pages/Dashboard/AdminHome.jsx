@@ -1,7 +1,8 @@
 // 📁 PATH: src/pages/Dashboard/AdminHome.jsx  (MODIFIED existing file – replace the whole file)
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { FaBoxOpen, FaDollarSign, FaPills, FaUsers } from "react-icons/fa";
-import { FiTrendingUp } from "react-icons/fi";
+import { FaBoxOpen, FaCalendarCheck, FaDollarSign, FaPills, FaUsers, FaUserMd } from "react-icons/fa";
+import { FiArrowRight, FiTrendingUp } from "react-icons/fi";
 import { Helmet } from "react-helmet-async";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 import AdminPageHeader from "../../components/AdminPageHeader";
@@ -28,7 +29,7 @@ const StatCard = ({ label, value, icon, tone, badge }) => (
 const AdminHome = () => {
     const axiosSecure = useAxiosSecure();
 
-    // Real stats from your server (unchanged)
+    // Real stats from your server (now also includes the doctor consultation numbers)
     const { data: stats = {} } = useQuery({
         queryKey: ["admin-stats"],
         queryFn: async () => (await axiosSecure.get("/admin-stats")).data,
@@ -72,11 +73,12 @@ const AdminHome = () => {
 
     // Collection rate = paid / revenue
     const rate = stats.revenue > 0 ? Math.min((stats.totalPaid / stats.revenue) * 100, 100) : 0;
+    const pendingAppointments = stats.pendingAppointments ?? 0;
 
     return (
         <div>
             <Helmet><title>CureMedix | Admin Home</title></Helmet>
-            <AdminPageHeader title="Welcome Home Admin" subtitle="System metrics, financial overview, and website banner requests." />
+            <AdminPageHeader title="Welcome Home Admin" subtitle="System metrics, financial overview, doctor consultations, and website banner requests." />
 
             {/* ── Overview ── */}
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-base-content/50">Overview</p>
@@ -108,6 +110,23 @@ const AdminHome = () => {
                     </div>
                     <p className="mt-2 text-xs text-base-content/60">{money(stats.totalPaid)} of {money(stats.revenue)} collected</p>
                 </div>
+            </div>
+
+            {/* ── ✅ NEW: Doctor consultations ── */}
+            <p className="mb-3 mt-8 text-xs font-semibold uppercase tracking-wider text-base-content/50">Doctor Consultations</p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <StatCard label="Total Appointments" value={stats.appointments ?? 0} icon={<FaCalendarCheck />} tone="blue" badge="All bookings" />
+                <div className="rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">Pending Appointments</p>
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg text-sm cm-tone-amber"><FaUserMd /></span>
+                    </div>
+                    <p className="mt-4 text-3xl font-bold text-amber-600 [[data-theme=dark]_&]:text-amber-400">{pendingAppointments}</p>
+                    <Link to="/dashboard/manage-appointments" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-600 hover:underline">
+                        {pendingAppointments > 0 ? "Review now" : "Manage appointments"} <FiArrowRight />
+                    </Link>
+                </div>
+                <StatCard label="Consultation Revenue" value={money(stats.consultationRevenue)} icon={<FaDollarSign />} tone="green" badge="Cancelled bookings excluded" />
             </div>
 
             {/* ── Banner requests (your real banner images) ── */}
