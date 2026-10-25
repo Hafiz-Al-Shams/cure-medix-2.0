@@ -1,4 +1,3 @@
-// 📁 PATH: src/pages/Shop/Shop.jsx  (MODIFIED existing file – replace the whole file)
 import { useEffect, useRef, useState } from "react";
 import { FiSearch, FiPlus, FiMinus, FiX, FiGrid, FiList, FiChevronLeft, FiChevronRight, FiShoppingCart, FiPackage } from "react-icons/fi";
 import { FaSortAlphaDown } from "react-icons/fa";

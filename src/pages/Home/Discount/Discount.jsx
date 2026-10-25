@@ -2,12 +2,23 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiArrowRight, FiShoppingCart } from "react-icons/fi";
+import Swal from "sweetalert2";
+import useAuth from "../../../hooks/useAuth";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import useCart from "../../../hooks/useCart";
 
 const Discount = () => {
     const [medicines, setMedicines] = useState([]);
     const swiperRef = useRef(null); // holds the swiper instance (used by autoplay + arrow buttons)
+
+    // 🔥 Auth + cart hooks (same as Shop page)
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const axiosSecure = useAxiosSecure();
+    const [, refetch] = useCart();
 
     // Load only discounted medicines (unchanged logic)
     useEffect(() => {
@@ -26,6 +37,55 @@ const Discount = () => {
             }, 100);
         }
     }, [medicines]);
+
+    // ✅ NEW: Add to cart – same logic as the Shop page
+    const handleAddToCart = (med, quantity = 1) => {
+        if (user?.email) {
+            const { name, image, price, _id, type, description, seller, company } = med;
+            axiosSecure
+                .post("/carts", { medicineId: _id, email: user.email, name, image, price, type, description, seller, company, quantity })
+                .then((res) => {
+                    if (res.data.insertedId) {
+                        Swal.fire({
+                            position: "center",
+                            icon: "success",
+                            title: `${name} added to your cart`,
+                            showConfirmButton: false,
+                            timer: 1000,
+                        });
+                        refetch(); // refresh navbar cart count
+                    }
+                })
+                .catch((err) => {
+                    console.error(err);
+                    Swal.fire({
+                        icon: "error",
+                        title: "Something went wrong",
+                        text: "Could not add this medicine to your cart. Please try again.",
+                    });
+                });
+        } else {
+            // Not logged in -> popup -> redirect to login
+            Swal.fire({
+                title: "You are not Logged In",
+                text: "Please login to add to the cart?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, login!",
+                buttonsStyling: false,
+                reverseButtons: true,
+                customClass: {
+                    popup: "rounded-2xl",
+                    title: "text-xl font-bold",
+                    actions: "gap-3",
+                    confirmButton: "px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold transition-colors",
+                    cancelButton: "px-5 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors",
+                },
+            }).then((result) => {
+                if (result.isConfirmed) navigate("/signIn", { state: { from: location } });
+            });
+        }
+    };
 
     return (
         <section className="bg-base-200/60 py-12 lg:py-16">
@@ -67,10 +127,13 @@ const Discount = () => {
                                 <h3 className="mt-3 font-semibold text-base-content">{medicine.name}</h3>
                                 {/* Shows price only if your API provides it */}
                                 {medicine.price && <p className="text-lg font-bold text-emerald-600 mt-auto pt-2">${medicine.price}</p>}
-                                {/* Cart logic lives elsewhere in your app, so this sends users to the shop; wire your addToCart here if needed */}
-                                <Link to="/shop" className="btn btn-sm mt-3 border-0 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 w-full">
+                                {/* ✅ Now a real, active Add To Cart button */}
+                                <button
+                                    onClick={() => handleAddToCart(medicine, 1)}
+                                    className="btn btn-sm mt-3 border-0 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 w-full"
+                                >
                                     <FiShoppingCart /> Add To Cart
-                                </Link>
+                                </button>
                             </div>
                         </SwiperSlide>
                     ))}

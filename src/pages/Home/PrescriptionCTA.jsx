@@ -14,28 +14,30 @@ const PrescriptionCTA = () => {
     const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
     // Shared sizing and alignment for both action elements
+    // min-height (not fixed height) so longer text can wrap on very small screens without clipping
     const actionClass =
-        "flex h-14 w-full min-w-0 items-center justify-center gap-2 rounded-lg border border-white/30 px-3 text-center text-xs sm:text-sm font-medium leading-tight";
+        "flex min-h-[3.5rem] w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-white/30 px-4 py-3 text-center text-xs sm:text-sm font-medium leading-snug";
 
     return (
-        <section className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-[1]">
-            <div className="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-900 text-white p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-5 shadow-xl">
+        <section className="max-w-screen-xl mx-auto px-4 sm:px-6 -mt-10 sm:-mt-14 lg:-mt-16 relative z-[1]">
+            <div className="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-900 text-white p-5 sm:p-6 lg:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-6 lg:gap-8 shadow-xl">
 
-                <div className="flex items-start gap-4 w-full lg:flex-1">
-                    <div className="w-12 h-12 shrink-0 rounded-xl bg-white/15 flex items-center justify-center text-2xl">
+                {/* Left: icon + text */}
+                <div className="flex items-start gap-3 sm:gap-4 w-full min-w-0 lg:flex-1">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl bg-white/15 flex items-center justify-center text-xl sm:text-2xl">
                         <FiFileText />
                     </div>
 
-                    <div>
-                        <span className="text-[10px] font-semibold bg-white/15 rounded px-2 py-0.5">
+                    <div className="min-w-0">
+                        <span className="inline-block text-[10px] font-semibold bg-white/15 rounded px-2 py-0.5 tracking-wide">
                             FAST PROCESS
                         </span>
 
-                        <h3 className="text-xl font-bold mt-1">
+                        <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mt-1.5 leading-snug break-words">
                             Have a Doctor&apos;s Prescription?
                         </h3>
 
-                        <p className="text-sm text-white/75 max-w-xl">
+                        <p className="text-xs sm:text-sm text-white/75 mt-1 sm:mt-1.5 max-w-xl leading-relaxed">
                             Prescription upload is coming soon. In the meantime,
                             contact our team on WhatsApp for assistance with
                             prescription-based medicine orders.
@@ -43,13 +45,12 @@ const PrescriptionCTA = () => {
                     </div>
                 </div>
 
-                {/* Responsive actions with equal sizing */}
-                <div className="w-full lg:w-[440px] shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Responsive actions with equal sizing:
+                    mobile = stacked, tablet = 2 columns full width, desktop = fixed-width side block */}
+                <div className="w-full lg:w-[400px] xl:w-[440px] shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                     {/* Static label: prescription upload is not implemented yet */}
-                    <span
-                        className={`${actionClass} bg-white/15`}
-                    >
+                    <span className={`${actionClass} bg-white/15`}>
                         <FiUpload className="shrink-0" />
                         <span>Prescription Upload Coming Soon</span>
                     </span>
