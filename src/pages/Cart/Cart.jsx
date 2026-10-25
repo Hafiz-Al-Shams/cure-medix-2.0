@@ -28,12 +28,28 @@ const Cart = () => {
     const [detailsItem, setDetailsItem] = useState(null); // item shown in the details popup
     const [deleteItem, setDeleteItem] = useState(null); // item waiting for delete confirmation
     const [showClear, setShowClear] = useState(false); // clear-cart confirmation popup
-    const [qtys, setQtys] = useState({}); // quantity overrides by item id (visual for now – see TODO below)
+    const [qtys, setQtys] = useState({}); // instant (optimistic) quantity by item id while the server saves
 
-    // Quantity of an item: local change > saved quantity from the shop > 1
+    // Quantity of an item: instant local change > quantity saved in the database > 1
     const getQty = (item) => qtys[item._id] ?? item.quantity ?? 1;
-    // TODO (later): after changing the number, also save it to your server, e.g. axiosSecure.put(`/carts/${id}`, { quantity })
-    const changeQty = (item, delta) => setQtys((prev) => ({ ...prev, [item._id]: Math.max(1, getQty(item) + delta) }));
+
+    // ✅ FIX: + / − now also SAVES the new quantity to the database, so it stays after a reload
+    const changeQty = (item, delta) => {
+        const oldQty = getQty(item);
+        const newQty = Math.max(1, oldQty + delta);
+        if (newQty === oldQty) return; // nothing changed (already at 1)
+
+        setQtys((prev) => ({ ...prev, [item._id]: newQty })); // show the new number immediately
+
+        axiosSecure
+            .patch(`/carts/${item._id}`, { quantity: newQty })
+            .then(() => refetch()) // keeps navbar / checkout data in sync with the database
+            .catch((err) => {
+                console.error("Failed to save quantity:", err);
+                setQtys((prev) => ({ ...prev, [item._id]: oldQty })); // put the old number back if saving failed
+                Swal.fire({ icon: "error", title: "Could not update quantity", text: "Please try again.", buttonsStyling: false, customClass: { popup: "rounded-2xl" } });
+            });
+    };
 
     const orderedCount = cart.reduce((sum, item) => sum + getQty(item), 0); // "Ordered Medicine: N"
     const totalPrice = cart.reduce((sum, item) => sum + Number(item.price) * getQty(item), 0);
@@ -81,6 +97,7 @@ const Cart = () => {
                         {/* Clear Cart – disabled when the cart is empty (same rule as before) */}
                         <button disabled={!cart.length} onClick={() => setShowClear(true)} className="btn btn-sm sm:btn-md flex-1 lg:flex-none border-0 bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50 [[data-theme=dark]_&]:bg-slate-700">Clear Cart</button>
                         {cart.length ? (
+                            // ✅ Back to a plain link: the checkout page now reads the saved quantities from the database
                             <Link to="/dashboard/payment" className="btn btn-sm sm:btn-md flex-1 lg:flex-none border-0 bg-teal-600 hover:bg-teal-700 text-white gap-2 shadow-lg shadow-teal-600/30"><FiCreditCard /> Checkout</Link>
                         ) : (
                             <button disabled className="btn btn-sm sm:btn-md flex-1 lg:flex-none border-0 bg-teal-600 text-white gap-2 opacity-50"><FiCreditCard /> Checkout</button>

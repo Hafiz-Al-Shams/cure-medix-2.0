@@ -56,8 +56,12 @@ const CheckoutForm = () => {
         if (user?.displayName) setHolder((h) => h || user.displayName);
     }, [user]);
 
-    // Total is calculated exactly as before
-    const totalPrice = cart.reduce((total, item) => total + item.price, 0);
+    // ✅ FIX: quantity now comes straight from the database (saved by the Cart page), fallback 1
+    const getQty = (item) => item.quantity ?? 1;
+
+    // total = price × quantity for every medicine
+    const totalPrice = Math.round(cart.reduce((total, item) => total + Number(item.price) * getQty(item), 0) * 100) / 100;
+    const totalPieces = cart.reduce((sum, item) => sum + getQty(item), 0); // total number of pieces (e.g. 18)
 
     useEffect(() => {
         if (totalPrice > 0) {
@@ -108,7 +112,22 @@ const CheckoutForm = () => {
             }
 
             if (paymentIntent.status === "succeeded") {
-                // saving the payment in the database (same data as before)
+                // ✅ NEW: a snapshot of every medicine bought (so the invoice can list them later,
+                // even if the medicine is edited/deleted afterwards)
+                const items = cart.map((item) => ({
+                    cartId: item._id,
+                    medicineId: item.medicineId,
+                    name: item.name,
+                    image: item.image,
+                    type: item.type,
+                    company: item.company,
+                    seller: item.seller,
+                    unitPrice: Number(item.price),
+                    quantity: getQty(item),
+                    lineTotal: Math.round(Number(item.price) * getQty(item) * 100) / 100,
+                }));
+
+                // saving the payment in the database (same data as before + items list)
                 const payment = {
                     email: user.email,
                     price: totalPrice,
@@ -116,6 +135,8 @@ const CheckoutForm = () => {
                     date: new Date(),
                     cartIds: cart.map((item) => item._id),
                     medicineIds: cart.map((item) => item.medicineId),
+                    items, // ✅ NEW
+                    totalItems: totalPieces, // ✅ NEW
                     status: "pending",
                 };
                 const res = await axiosSecure.post("/payments", payment);
@@ -223,15 +244,15 @@ const CheckoutForm = () => {
                                 </span>
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-semibold text-base-content">{item.name}</p>
-                                    <p className="truncate text-xs text-base-content/50">Qty: {item.quantity ?? 1}{item.type ? ` • ${item.type}` : ""}</p>
+                                    <p className="truncate text-xs text-base-content/50">Qty: {getQty(item)}{item.type ? ` • ${item.type}` : ""}</p>
                                 </div>
-                                <p className="text-sm font-bold text-base-content">{money(item.price)}</p>
+                                <p className="text-sm font-bold text-base-content">{money(Number(item.price) * getQty(item))}</p>
                             </li>
                         ))}
                     </ul>
 
                     <div className="mt-3 space-y-2 border-t border-base-content/10 pt-4 text-sm">
-                        <div className="flex justify-between text-base-content/70"><span>Items</span><span>{cart.length}</span></div>
+                        <div className="flex justify-between text-base-content/70"><span>Items</span><span>{totalPieces}</span></div>
                         <div className="flex justify-between text-base-content/70"><span>Subtotal</span><span>{money(totalPrice)}</span></div>
                         <div className="flex items-center justify-between border-t border-base-content/10 pt-3">
                             <span className="font-bold text-base-content">Total Due</span>
