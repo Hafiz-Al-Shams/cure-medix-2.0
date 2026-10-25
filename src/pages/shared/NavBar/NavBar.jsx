@@ -264,12 +264,13 @@ const NavBar = () => {
                                 <div
                                     tabIndex={0}
                                     role="button"
-                                    className="btn btn-ghost btn-xs p-0 rounded-full"
+                                    aria-label="Open user menu"
+                                    className="btn btn-ghost btn-xs !w-8 !h-8 lg:!w-9 lg:!h-9 !min-h-0 !p-0 !rounded-full !overflow-hidden !border-0 !bg-transparent !shadow-none hover:!bg-transparent active:!bg-transparent focus:!bg-transparent hover:!shadow-none active:!shadow-none focus:!shadow-none focus-visible:!outline-none focus-visible:!ring-0"
                                 >
                                     <img
                                         src={user.photoURL}
                                         alt="avatar"
-                                        className="w-8 h-8 lg:w-9 lg:h-9 rounded-full object-cover"
+                                        className="block w-full h-full !rounded-full object-cover"
                                     />
                                 </div>
 

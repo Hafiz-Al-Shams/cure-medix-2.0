@@ -1,69 +1,113 @@
-// 📁 PATH: src/pages/Home/Banner/Banner.jsx  (MODIFIED existing file – use your real Banner path; replace the whole file)
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiSearch, FiCheckCircle, FiThermometer, FiUserCheck } from "react-icons/fi";
-import useBanners from "../../../hooks/useBanners"; // your existing banner data hook
+import {
+    FiSearch,
+    FiCheckCircle,
+    FiThermometer,
+    FiUserCheck,
+} from "react-icons/fi";
+import useBanners from "../../../hooks/useBanners";
 
 const Banner = () => {
-    const [banners] = useBanners(); // [{ image }, ...] from your API
-    const [active, setActive] = useState(0); // current featured slide
-    const [query, setQuery] = useState(""); // search box text
+    const [banners] = useBanners();
+    const [active, setActive] = useState(0);
+    const [query, setQuery] = useState("");
     const navigate = useNavigate();
 
-    // Auto-advance the featured card every 3s; cleanup prevents leaks/duplicate timers
+    // Auto-advance the featured banner every 3 seconds
     useEffect(() => {
         if (!banners.length) return;
-        const timer = setInterval(() => setActive((i) => (i + 1) % banners.length), 3000);
+
+        const timer = setInterval(
+            () => setActive((i) => (i + 1) % banners.length),
+            3000
+        );
+
         return () => clearInterval(timer);
     }, [banners.length]);
 
-    // Search -> sends the user to the shop with the typed text in the URL (?search=...)
+    // Search when the button is clicked or Enter is pressed
     const handleSearch = (e) => {
         e.preventDefault();
-        navigate(`/shop?search=${encodeURIComponent(query.trim())}`);
+
+        const trimmedQuery = query.trim();
+
+        if (!trimmedQuery) return;
+
+        navigate(`/shop?search=${encodeURIComponent(trimmedQuery)}`);
     };
 
     return (
         <section className="bg-gradient-to-br from-[#031a1a] via-[#052e2b] to-[#0b4a3f] text-white">
             <div className="max-w-screen-xl mx-auto px-4 pt-12 pb-28 lg:pt-20 lg:pb-36 grid lg:grid-cols-2 gap-10 items-center">
-                {/* ── Left: headline, search, trust badges ── */}
+
+                {/* Left: headline, search, trust badges */}
                 <div>
                     <span className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide bg-white/10 border border-white/10 rounded-full px-3 py-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                         CERTIFIED PHARMACY PLATFORM
                     </span>
+
                     <h1 className="mt-5 text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-                        Your Trusted Partner for <span className="text-emerald-400">Genuine Medicines</span> &amp; Healthcare.
+                        Your Trusted Partner for{" "}
+                        <span className="text-emerald-400">
+                            Genuine Medicines
+                        </span>{" "}
+                        &amp; Healthcare.
                     </h1>
+
                     <p className="mt-4 text-sm md:text-base text-white/70 max-w-lg">
-                        Access authentic pharmaceutical supplies, instant online doctor consultations, and doorstep express delivery with total peace of mind.
+                        Access authentic pharmaceutical supplies, instant
+                        online doctor consultations, and doorstep express
+                        delivery with total peace of mind.
                     </p>
 
-                    {/* Search bar (functional) – 📱 on phones the input and button stack (button full width); from `sm` up they sit in one row */}
-                    <form onSubmit={handleSearch} className="mt-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 bg-white/10 border border-white/15 rounded-xl p-1.5 w-full max-w-lg">
-                        <div className="flex items-center flex-1 min-w-0"> {/* min-w-0 stops long placeholder text from pushing the form wider than the screen */}
-                            <FiSearch className="ml-2.5 shrink-0 text-white/60 sm:hidden" /> {/* search icon only on phones, since the button text sits below */}
+                    {/* Search bar */}
+                    <form
+                        onSubmit={handleSearch}
+                        className="mt-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 bg-white/10 border border-white/15 rounded-xl p-1.5 w-full max-w-lg"
+                    >
+                        <div className="flex items-center flex-1 min-w-0">
+                            <FiSearch className="ml-2.5 shrink-0 text-white/60 sm:hidden" />
+
                             <input
+                                type="text"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search by Medicine Name, Brand, or Formula..."
+                                placeholder="Search Medicines by Name or Type..."
                                 className="flex-1 min-w-0 w-full bg-transparent outline-none px-3 py-2.5 sm:py-0 text-sm text-ellipsis placeholder:text-white/50"
                             />
                         </div>
-                        <button type="submit" className="btn btn-sm md:btn-md w-full sm:w-auto shrink-0 border-0 bg-emerald-500 hover:bg-emerald-600 text-white gap-2">
-                            <FiSearch className="hidden sm:inline" /> Find Medicines {/* icon moves to the input on phones */}
+
+                        <button
+                            type="submit"
+                            className="btn btn-sm md:btn-md w-full sm:w-auto shrink-0 border-0 bg-emerald-500 hover:bg-emerald-600 text-white gap-2"
+                        >
+                            <FiSearch className="hidden sm:inline" />
+                            Find Medicines
                         </button>
                     </form>
 
                     {/* Trust badges */}
                     <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
-                        <span className="flex items-center gap-1.5"><FiCheckCircle className="text-emerald-400" /> 100% Genuine Guarantee</span>
-                        <span className="flex items-center gap-1.5"><FiThermometer className="text-emerald-400" /> Temperature Controlled</span>
-                        <span className="flex items-center gap-1.5"><FiUserCheck className="text-emerald-400" /> Licensed Doctors</span>
+                        <span className="flex items-center gap-1.5">
+                            <FiCheckCircle className="text-emerald-400" />
+                            100% Genuine Guarantee
+                        </span>
+
+                        <span className="flex items-center gap-1.5">
+                            <FiThermometer className="text-emerald-400" />
+                            Temperature Controlled
+                        </span>
+
+                        <span className="flex items-center gap-1.5">
+                            <FiUserCheck className="text-emerald-400" />
+                            Licensed Doctors
+                        </span>
                     </div>
                 </div>
 
-                {/* ── Right: featured banner card (uses your banners data) ── */}
+                {/* Right: featured banner card */}
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-4 backdrop-blur">
                     <div className="relative h-48 md:h-60 lg:h-64 rounded-2xl overflow-hidden bg-white/10">
                         {banners.map((b, i) => (
@@ -71,22 +115,50 @@ const Banner = () => {
                                 key={i}
                                 src={b.image}
                                 alt="Featured banner"
-                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === active ? "opacity-100" : "opacity-0"}`}
+                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === active
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                    }`}
                             />
                         ))}
-                        <span className="absolute left-3 bottom-3 text-[10px] font-semibold bg-emerald-500 px-2 py-0.5 rounded">Featured Banner</span>
+
+                        <span className="absolute left-3 bottom-3 text-[10px] font-semibold bg-emerald-500 px-2 py-0.5 rounded">
+                            Featured Banner
+                        </span>
                     </div>
-                    <h3 className="mt-4 text-lg font-bold">Need Urgent Prescription Refills?</h3>
-                    <p className="text-xs text-white/60 mt-1">Our pharmacists verify and dispatch orders instantly across major metropolitan areas.</p>
+
+                    <h3 className="mt-4 text-lg font-bold">
+                        Need Urgent Prescription Refills?
+                    </h3>
+
+                    <p className="text-xs text-white/60 mt-1">
+                        Our pharmacists verify and dispatch orders instantly
+                        across major metropolitan areas.
+                    </p>
+
                     <div className="mt-3 flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1.5 text-white/80"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> ISO 9001 Certified Pharmacy</span>
-                        <Link to="/shop" className="font-semibold underline">Explore Store →</Link>
+                        <span className="flex items-center gap-1.5 text-white/80">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            ISO 9001 Certified Pharmacy
+                        </span>
+
+                        <Link to="/shop" className="font-semibold underline">
+                            Explore Store →
+                        </Link>
                     </div>
-                    {/* Slide dots (clickable) */}
+
+                    {/* Slide dots */}
                     <div className="mt-3 flex gap-1.5">
                         {banners.map((_, i) => (
-                            <button key={i} onClick={() => setActive(i)} aria-label={`Slide ${i + 1}`}
-                                className={`h-1.5 rounded-full transition-all ${i === active ? "w-6 bg-emerald-400" : "w-1.5 bg-white/30"}`} />
+                            <button
+                                key={i}
+                                onClick={() => setActive(i)}
+                                aria-label={`Slide ${i + 1}`}
+                                className={`h-1.5 rounded-full transition-all ${i === active
+                                    ? "w-6 bg-emerald-400"
+                                    : "w-1.5 bg-white/30"
+                                    }`}
+                            />
                         ))}
                     </div>
                 </div>
