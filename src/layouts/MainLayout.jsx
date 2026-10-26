@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 import NavBar from "../pages/shared/NavBar/NavBar";
 import Footer from "../pages/shared/Footer/Footer";
 
@@ -23,6 +23,8 @@ const MainLayout = () => {
                 <Outlet></Outlet>
             </div>
             {noFooter1 || noFooter2 || noFooter3 ? null : <Footer></Footer>}
+
+            <ScrollRestoration /> {/* NEW: every new main-site page opens from the top */}
         </>
     );
 };

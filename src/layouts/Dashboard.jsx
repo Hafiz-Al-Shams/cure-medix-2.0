@@ -1,9 +1,8 @@
-// 📁 PATH: src/layouts/Dashboard.jsx  (MODIFIED existing file – replace the whole file)
 import { useEffect, useState } from "react";
 import { FaHome, FaList, FaShoppingCart, FaUsers, FaFileInvoice, FaCapsules, FaAd, FaCalendarCheck } from "react-icons/fa";
 import { MdPayments, MdOutlineDarkMode, MdLightMode } from "react-icons/md";
 import { FiArrowLeft, FiMenu, FiX } from "react-icons/fi";
-import { NavLink, Link, Outlet } from "react-router-dom";
+import { NavLink, Link, Outlet, ScrollRestoration } from "react-router-dom"; // NEW: ScrollRestoration added to the import
 import { Helmet } from "react-helmet-async";
 import useCart from "../hooks/useCart";
 import useAdmin from "../hooks/useAdmin";
@@ -129,6 +128,8 @@ const Dashboard = () => {
                     <Outlet></Outlet>
                 </main>
             </div>
+
+            <ScrollRestoration /> {/* NEW: every new dashboard page opens from the top */}
         </div>
     );
 };
