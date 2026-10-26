@@ -9,6 +9,7 @@ import PrescriptionCTA from "../PrescriptionCTA";
 import Commitments from "../Commitments";
 import Articles from "../Articles";
 import FAQ from "../FAQ";
+import BackToTop from "../../../components/BackToTop/BackToTop"; // NEW: back to top button
 
 // Each section now owns its own full-width background + container,
 // so Home only controls ORDER (matches the mockup top to bottom).
@@ -30,6 +31,7 @@ const Home = () => {
             <Qualities />
             {/* Newsletter & AppPromotion are not in the new mockup, so they are no longer rendered.
                 Their files are untouched; re-import and drop them here anytime. */}
+            <BackToTop /> {/* NEW */}
         </div>
     );
 };

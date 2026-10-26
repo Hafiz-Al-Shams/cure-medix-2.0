@@ -1,4 +1,3 @@
-// 📁 PATH: src/pages/CategoryDetails/DetailsCard.jsx  (MODIFIED existing file – replace the whole file)
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
@@ -16,6 +15,7 @@ import Swal from "sweetalert2";
 import useAuth from "../../hooks/useAuth";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 import useCart from "../../hooks/useCart";
+import BackToTop from "../../components/BackToTop/BackToTop"; // NEW: back to top button
 
 /* ----------------------------------------------------------------
    Routes (taken from your router.jsx)
@@ -389,6 +389,8 @@ const DetailsCard = () => {
                     </div>
                 </div>
             )}
+
+            <BackToTop /> {/* NEW */}
         </>
     );
 };

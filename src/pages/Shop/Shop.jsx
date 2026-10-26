@@ -8,6 +8,7 @@ import useAxiosSecure from "../../hooks/useAxiosSecure";
 import useCart from "../../hooks/useCart";
 import { Helmet } from "react-helmet-async";
 import useMedicines from "../../hooks/useMedicines";
+import BackToTop from "../../components/BackToTop/BackToTop"; // NEW: back to top button
 
 const Shop = () => {
     // 🔥 Fetch medicines once (unchanged)
@@ -355,6 +356,8 @@ const Shop = () => {
                     </div>
                 </div>
             )}
+
+            <BackToTop /> {/* NEW */}
         </div>
     );
 };

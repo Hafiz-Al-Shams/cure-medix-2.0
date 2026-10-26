@@ -1,6 +1,3 @@
-/* 📁 PATH: src/index.css  (MODIFIED existing file – replace the whole file) */
-
-/* Mockup uses a clean geometric sans, so Lato is swapped for Plus Jakarta Sans */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;

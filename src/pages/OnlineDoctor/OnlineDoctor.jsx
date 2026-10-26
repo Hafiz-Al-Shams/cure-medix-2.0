@@ -7,6 +7,7 @@ import { FaStethoscope, FaHospital } from "react-icons/fa";
 import { FiShield, FiFileText, FiUserCheck, FiCalendar, FiVideo, FiX, FiCheck, FiArrowRight, FiClock } from "react-icons/fi";
 import useAuth from "../../hooks/useAuth";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
+import BackToTop from "../../components/BackToTop/BackToTop"; // NEW: back to top button
 
 // ⚠️ Change this if your checkout route is different
 const PAYMENT_PATH = "/dashboard/payment";
@@ -398,6 +399,8 @@ const OnlineDoctor = () => {
                     </div>
                 </Modal>
             )}
+
+            <BackToTop /> {/* NEW */}
         </>
     );
 };

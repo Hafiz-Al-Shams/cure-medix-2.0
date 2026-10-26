@@ -1,4 +1,3 @@
-// 📁 PATH: src/layouts/MainLayout.jsx  (MODIFIED existing file – replace the whole file)
 import { Outlet, useLocation } from "react-router-dom";
 import NavBar from "../pages/shared/NavBar/NavBar";
 import Footer from "../pages/shared/Footer/Footer";
