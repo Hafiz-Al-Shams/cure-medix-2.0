@@ -28,11 +28,13 @@ const selectCls = "select select-bordered w-full border-base-content/15 bg-base-
 
 const defaultValues = { discount: "false", discountPercentage: "0", unit: "Mg", company: "", category: "" };
 const baseCompanies = ["Pfizer", "Novartis", "Roche", "Sanofi", "GSK"];
-const basePercents = ["0", "25", "40", "50", "70"];
+// 🔧 FIX: "0" removed from this list – 0% is not a real discount, so it can't be chosen when "Has discount" is on
+const basePercents = ["25", "40", "50", "70"];
 
 const ManageMedicines = () => {
     const { user } = useAuth();
-    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({ defaultValues });
+    // 🔧 FIX: added setValue (used to reset the percentage when the Discount dropdown changes)
+    const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({ defaultValues });
     const axiosPublic = useAxiosPublic();
     const axiosSecure = useAxiosSecure();
     const queryClient = useQueryClient();
@@ -201,7 +203,8 @@ const ManageMedicines = () => {
     const companyOptions = [...new Set([...baseCompanies, editing?.company].filter(Boolean))];
     const categoryNames = categories.map((c) => c.name);
     const categoryOptions = [...new Set([...categoryNames, editing?.category].filter(Boolean))];
-    const percentOptions = [...new Set([...basePercents, editing ? String(parseInt(editing.discountPercentage, 10) || 0) : null].filter((v) => v !== null))].sort((a, b) => a - b);
+    // 🔧 FIX: "0" is filtered out here too, so an old medicine's 0% can never appear as a choice
+    const percentOptions = [...new Set([...basePercents, editing ? String(parseInt(editing.discountPercentage, 10) || 0) : null].filter((v) => v !== null && v !== "0"))].sort((a, b) => a - b);
 
     const actionBtns = (m) => (
         <div className="flex items-center justify-end gap-2">
@@ -332,14 +335,35 @@ const ManageMedicines = () => {
                                     </select>
                                 </Field>
                                 <Field label="Discount">
-                                    <select {...register("discount")} className={selectCls}>
+                                    {/* 🔧 FIX: when the seller changes this dropdown, the percentage is reset:
+                                        "Has discount" -> empty (seller must pick a real %), "No discount" -> "0" */}
+                                    <select
+                                        {...register("discount", {
+                                            onChange: (e) => setValue("discountPercentage", e.target.value === "true" ? "" : "0"),
+                                        })}
+                                        className={selectCls}
+                                    >
                                         <option value="false">No discount</option>
                                         <option value="true">Has discount</option>
                                     </select>
                                 </Field>
-                                <Field label="Discount Percentage">
-                                    <select {...register("discountPercentage")} disabled={!hasDiscount} className={`${selectCls} disabled:opacity-50`}>
-                                        {percentOptions.map((p) => <option key={p} value={p}>{p}%</option>)}
+                                <Field label="Discount Percentage" error={errors.discountPercentage}>
+                                    {/* 🔧 FIX: no 0% choice when "Has discount" is on; a real percentage is required */}
+                                    <select
+                                        {...register("discountPercentage", {
+                                            validate: (v) => !hasDiscount || parseInt(v, 10) > 0 || "Please select a discount percentage",
+                                        })}
+                                        disabled={!hasDiscount}
+                                        className={`${selectCls} disabled:opacity-50`}
+                                    >
+                                        {hasDiscount ? (
+                                            <>
+                                                <option value="">Select percentage</option>
+                                                {percentOptions.map((p) => <option key={p} value={p}>{p}%</option>)}
+                                            </>
+                                        ) : (
+                                            <option value="0">0%</option>
+                                        )}
                                     </select>
                                 </Field>
                                 <Field label="Company*" error={errors.company}>
