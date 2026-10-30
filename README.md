@@ -141,7 +141,7 @@ Follow these steps to run the project locally:
 1. **Clone the repository:**  
    ```sh
    git clone https://github.com/Hafiz-Al-Shams/cure-medix-2.0.git
-   cd CureMedix-client
+   cd cure-medix-2.0
    ```
 
 2. **Install dependencies:**  
