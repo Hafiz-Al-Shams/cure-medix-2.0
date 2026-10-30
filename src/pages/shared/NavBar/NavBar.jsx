@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import logo from "../../../assets/logo.png";
 import { FaStethoscope } from "react-icons/fa";
 import { RiShoppingBag2Line } from "react-icons/ri";
@@ -35,6 +35,7 @@ const NavBar = () => {
     const [isSeller] = useSeller();
     const [cart] = useCart();
     const [showLogout, setShowLogout] = useState(false);
+    const navigate = useNavigate();
 
     // Theme toggle + persistence
     const [theme, setTheme] = useState("light");
@@ -67,6 +68,25 @@ const NavBar = () => {
                 });
             })
             .catch((err) => console.error("ERROR", err.message));
+    };
+
+    // Guests can't open the cart: show a short auto-closing alert and send them to login
+    const handleCartClick = (e) => {
+        if (user) return; // logged-in users go to the cart as usual
+
+        e.preventDefault();
+        closeDropdown();
+
+        Swal.fire({
+            position: "center",
+            icon: "warning",
+            title: "Login required",
+            text: "You must login to view your cart items.",
+            showConfirmButton: false,
+            timer: 2000,
+        });
+
+        navigate("/signIn");
     };
 
     // Main navigation links
@@ -245,9 +265,10 @@ const NavBar = () => {
                             </button>
                         </div>
 
-                        {/* Cart with live count */}
+                        {/* Cart with live count (guests get an alert + login redirect) */}
                         <Link
                             to="/dashboard/cart"
+                            onClick={handleCartClick}
                             className="relative btn btn-sm btn-circle btn-ghost"
                             aria-label="Cart"
                         >
