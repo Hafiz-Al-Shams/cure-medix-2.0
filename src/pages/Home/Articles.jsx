@@ -15,7 +15,6 @@ const Articles = () => (
                     <p className="text-[11px] font-semibold tracking-wider text-emerald-600">HEALTH EDUCATION</p>
                     <h2 className="text-2xl lg:text-3xl font-bold text-base-content">Latest Medical Insights</h2>
                 </div>
-                <Link to="/shop" className="text-xs font-semibold text-emerald-600">View All Articles →</Link>
             </div>
             <div className="mt-6 grid md:grid-cols-3 gap-5">
                 {articles.map((a) => (

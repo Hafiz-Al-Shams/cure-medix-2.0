@@ -30,9 +30,6 @@ const KnowUs = () => {
                         <div className="border border-base-content/10 rounded-xl p-3"><p className="text-xl font-bold text-base-content">100%</p><p className="text-[11px] text-base-content/60">Genuine Medicines</p></div>
                         <div className="border border-base-content/10 rounded-xl p-3"><p className="text-xl font-bold text-base-content">24/7</p><p className="text-[11px] text-base-content/60">Doctor Support</p></div>
                     </div>
-                    {/* Original external "Learn More" link kept */}
-                    <a href="https://www.google.com/search?q=define+cure" target="_blank" rel="noopener noreferrer"
-                        className="btn btn-sm mt-5 border-0 bg-emerald-600 hover:bg-emerald-700 text-white">Learn More About Us</a>
                 </div>
             </div>
         </section>
